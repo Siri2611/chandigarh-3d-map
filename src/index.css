@@ -32,6 +32,16 @@
   padding: 0;
 }
 
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  position: fixed; /* Helps prevent bounce on iOS specifically */
+  overscroll-behavior: none;
+}
+
 body {
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-primary);
@@ -39,7 +49,6 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow: hidden; /* App is full screen map */
 }
 
 /* Typography Utilities */
@@ -141,6 +150,11 @@ h3 { font-size: 1.5rem; }
   flex-direction: column;
   overflow: hidden;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-content-scroll {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-pull-tab {

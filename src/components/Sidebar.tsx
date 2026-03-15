@@ -111,8 +111,17 @@ export function Sidebar({
     <motion.div 
       className={`glass-panel glass-sidebar ${mode === 'list' && !isMobileExpanded ? 'collapsed-mobile' : ''}`}
       initial={{ x: -400, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
+      animate={{ x: 0, opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.2 }}
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      dragElastic={{ top: 0, bottom: 0.5 }} // Only allow pulling down gently before snap
+      onDragEnd={(_, info) => {
+        // If dragged down far enough or fast enough, collapse it
+        if (info.offset.y > 50 || info.velocity.y > 500) {
+          setIsMobileExpanded(false);
+        }
+      }}
       style={{
         zIndex: 10,
         display: 'flex',

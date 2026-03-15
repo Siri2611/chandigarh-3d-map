@@ -93,6 +93,10 @@ export function MapContainer({
   }, [onMapClick]);
 
   useEffect(() => {
+    // Detect if we're on mobile to apply a larger bottom padding
+    const isMobile = window.innerWidth <= 768;
+    const paddingOffset = isMobile ? { bottom: window.innerHeight * 0.4 } : { left: 360 };
+
     if (selectedReviewId && mapRef.current) {
       const review = reviews.find(r => r.id === selectedReviewId);
       if (review) {
@@ -100,6 +104,7 @@ export function MapContainer({
           center: [review.longitude, review.latitude],
           zoom: 15,
           pitch: 65,
+          padding: paddingOffset,
           duration: 2000,
           essential: true
         });
@@ -108,6 +113,7 @@ export function MapContainer({
       mapRef.current.flyTo({
         center: [draftLocation.longitude, draftLocation.latitude],
         zoom: 15,
+        padding: paddingOffset,
         duration: 1000,
         essential: true
       });
