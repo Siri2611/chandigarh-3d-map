@@ -44,6 +44,8 @@ function App() {
   // Fetch reviews on mount
   useEffect(() => {
     const fetchReviews = async () => {
+      if (!supabase) return;
+      
       const { data, error } = await supabase
         .from('reviews')
         .select('*')
@@ -93,7 +95,7 @@ function App() {
   }, []);
 
   const handleSaveReview = useCallback(async (reviewData: Omit<BurgerReview, 'id' | 'longitude' | 'latitude'>) => {
-    if (!draftLocation) return;
+    if (!draftLocation || !supabase) return;
     
     const newReview = {
       ...reviewData,
@@ -122,6 +124,7 @@ function App() {
   }, [draftLocation]);
 
   const handleDeleteReview = useCallback(async (id: string) => {
+    if (!supabase) return;
     const { error } = await supabase
       .from('reviews')
       .delete()
@@ -139,6 +142,27 @@ function App() {
       setSidebarMode('list');
     }
   }, [selectedReviewId]);
+
+  if (!supabase) {
+    return (
+      <div style={{
+        height: '100vh', display: 'flex', flexDirection: 'column', 
+        alignItems: 'center', justifyContent: 'center', background: '#0f172a', color: 'white', padding: '24px', textAlign: 'center'
+      }}>
+        <h2 style={{ marginBottom: '12px' }}>Supabase Configuration Missing 🛑</h2>
+        <p style={{ maxWidth: '400px', lineHeight: 1.6, opacity: 0.8 }}>
+          Your site works locally but crashes on Vercel because Vercel doesn't know your keys.
+          <br /><br />
+          Please go to your **Vercel Project Settings ➔ Environment Variables** and add:
+        </p>
+        <code style={{ background: 'rgba(255,255,255,0.1)', padding: '8px 12px', borderRadius: '4px', margin: '16px 0', fontSize: '0.9rem' }}>
+          VITE_SUPABASE_URL <br />
+          VITE_SUPABASE_ANON_KEY
+        </code>
+        <p style={{ fontSize: '0.8rem', opacity: 0.5 }}>Then trigger a new redeploy on Vercel.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
