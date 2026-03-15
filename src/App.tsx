@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useCallback, useEffect } from 'react';
 import { Map, Lock, Unlock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapContainer } from './components/MapContainer';
 import { Sidebar } from './components/Sidebar';
+import { supabase } from './supabaseClient';
 import './App.css';
 
 export type Verdict = 'Try Once' | 'Eat Again' | 'Avoid';
@@ -22,6 +22,7 @@ export interface BurgerReview {
   reviewText: string;
   logoUrl?: string;
   locationLink?: string;
+  created_at?: string;
 }
 
 export type SidebarMode = 'list' | 'add' | 'detail';
@@ -39,6 +40,24 @@ function App() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [passwordError, setPasswordError] = useState(false);
+
+  // Fetch reviews on mount
+  useEffect(() => {
+    const fetchReviews = async () => {
+      const { data, error } = await supabase
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reviews:', error);
+      } else if (data) {
+        setReviews(data as BurgerReview[]);
+      }
+    };
+
+    fetchReviews();
+  }, []);
 
   const handleAdminToggle = () => {
     if (isAdmin) {
@@ -73,23 +92,47 @@ function App() {
     setSidebarMode(id ? 'detail' : 'list');
   }, []);
 
-  const handleSaveReview = useCallback((reviewData: Omit<BurgerReview, 'id' | 'longitude' | 'latitude'>) => {
+  const handleSaveReview = useCallback(async (reviewData: Omit<BurgerReview, 'id' | 'longitude' | 'latitude'>) => {
     if (!draftLocation) return;
     
-    const newReview: BurgerReview = {
+    const newReview = {
       ...reviewData,
       longitude: draftLocation.longitude,
       latitude: draftLocation.latitude,
-      id: uuidv4()
     };
     
-    setReviews(prev => [...prev, newReview]);
-    setDraftLocation(null);
-    setSelectedReviewId(newReview.id);
-    setSidebarMode('detail');
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert([newReview])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error saving review:', error);
+      alert('Failed to save review to database.');
+      return;
+    }
+
+    if (data) {
+      setReviews(prev => [data as BurgerReview, ...prev]);
+      setDraftLocation(null);
+      setSelectedReviewId(data.id);
+      setSidebarMode('detail');
+    }
   }, [draftLocation]);
 
-  const handleDeleteReview = useCallback((id: string) => {
+  const handleDeleteReview = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting review:', error);
+      alert('Failed to delete review.');
+      return;
+    }
+
     setReviews(prev => prev.filter(r => r.id !== id));
     if (selectedReviewId === id) {
       setSelectedReviewId(null);
