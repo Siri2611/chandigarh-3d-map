@@ -111,7 +111,7 @@ function App() {
 
     if (error) {
       console.error('Error saving review:', error);
-      alert('Failed to save review to database.');
+      alert(`Failed to save review to database: ${error.message}`);
       return;
     }
 
