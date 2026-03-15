@@ -24,19 +24,41 @@ const getVerdictColor = (verdict: Verdict) => {
   }
 };
 
-const StarRating = ({ value, readOnly = true, onChange }: { value: number, readOnly?: boolean, onChange?: (val: number) => void }) => {
+const StarRating = ({ value }: { value: number }) => {
   return (
-    <div style={{ display: 'flex', gap: '4px' }}>
-      {[1, 2, 3, 4, 5].map((star) => (
-        <Star
-          key={star}
-          size={16}
-          fill={star <= value ? 'var(--accent-primary)' : 'transparent'}
-          color={star <= value ? 'var(--accent-primary)' : 'var(--text-muted)'}
-          style={{ cursor: readOnly ? 'default' : 'pointer' }}
-          onClick={() => !readOnly && onChange && onChange(star)}
-        />
-      ))}
+    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+      {[1, 2, 3, 4, 5].map((star) => {
+        const fillPercentage = Math.max(0, Math.min(100, (value - (star - 1)) * 100));
+
+        return (
+          <div key={star} style={{ position: 'relative', width: '16px', height: '16px' }}>
+            {/* Background Empty Star */}
+            <Star 
+              size={16} 
+              color="var(--text-muted)" 
+              fill="transparent" 
+              style={{ position: 'absolute', top: 0, left: 0 }} 
+            />
+            
+            {/* Front Filled Star clipped by width */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: `${fillPercentage}%`,
+              overflow: 'hidden',
+              height: '16px'
+            }}>
+              <Star 
+                size={16} 
+                color="var(--accent-primary)" 
+                fill="var(--accent-primary)" 
+                style={{ position: 'absolute', top: 0, left: 0 }} 
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -406,22 +428,69 @@ export function Sidebar({
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--border-radius-md)' }}>
-                <div className="flex-between">
-                  <label className="text-xs text-muted">Taste</label>
-                  <StarRating value={taste} readOnly={false} onChange={setTaste} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--border-radius-md)' }}>
+                {/* Taste */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div className="flex-between">
+                    <label className="text-xs text-muted">Taste</label>
+                    <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>{taste.toFixed(1)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <StarRating value={taste} />
+                    <input 
+                      type="range" min="1" max="5" step="0.1" value={taste} 
+                      onChange={e => setTaste(parseFloat(e.target.value))} 
+                      style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
+                    />
+                  </div>
                 </div>
-                <div className="flex-between">
-                  <label className="text-xs text-muted">Texture</label>
-                  <StarRating value={texture} readOnly={false} onChange={setTexture} />
+
+                {/* Texture */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div className="flex-between">
+                    <label className="text-xs text-muted">Texture</label>
+                    <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>{texture.toFixed(1)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <StarRating value={texture} />
+                    <input 
+                      type="range" min="1" max="5" step="0.1" value={texture} 
+                      onChange={e => setTexture(parseFloat(e.target.value))} 
+                      style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
+                    />
+                  </div>
                 </div>
-                <div className="flex-between">
-                  <label className="text-xs text-muted">Size</label>
-                  <StarRating value={size} readOnly={false} onChange={setSize} />
+
+                {/* Size */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div className="flex-between">
+                    <label className="text-xs text-muted">Size</label>
+                    <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>{size.toFixed(1)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <StarRating value={size} />
+                    <input 
+                      type="range" min="1" max="5" step="0.1" value={size} 
+                      onChange={e => setSize(parseFloat(e.target.value))} 
+                      style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
+                    />
+                  </div>
                 </div>
-                <div className="flex-between" style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--glass-border)' }}>
-                  <label className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Overall</label>
-                  <StarRating value={overall} readOnly={false} onChange={setOverall} />
+
+                {/* Overall */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--glass-border)' }}>
+                  <div className="flex-between">
+                    <label className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Overall</label>
+                    <span className="text-sm font-bold" style={{ color: 'var(--accent-primary)' }}>{overall.toFixed(1)}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <StarRating value={overall} />
+                    <input 
+                      type="range" min="1" max="5" step="0.1" value={overall} 
+                      onChange={e => setOverall(parseFloat(e.target.value))} 
+                      style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
+                    />
+                  </div>
                 </div>
               </div>
 

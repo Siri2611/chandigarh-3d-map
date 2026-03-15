@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Map, Lock, Unlock } from 'lucide-react';
+import { Lock, Unlock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapContainer } from './components/MapContainer';
 import { Sidebar } from './components/Sidebar';
@@ -170,9 +170,7 @@ function App() {
       <div className="top-navbar">
         <div className="navbar-content">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ background: 'white', padding: '10px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.3)' }}>
-              <Map color="var(--accent-primary)" size={24} />
-            </div>
+            <img src="/logo.png" alt="Burger.Theory Logo" style={{ width: '60px', height: '60px', objectFit: 'contain', display: 'block' }} />
             <div>
               <h1 style={{ color: 'white', fontSize: '1.75rem', margin: 0, textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>Burger.Theory</h1>
               <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', margin: '2px 0 0 0', textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>Chandigarh Burger Map</p>

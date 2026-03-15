@@ -188,12 +188,48 @@ export function MapContainer({
                     </div>
                   </div>
                   <div style={{
-                    background: isSelected ? color : `linear-gradient(135deg, ${color}, #1e293b)`,
-                    borderRadius: '50%',
-                    padding: '8px',
-                    boxShadow: `0 4px 12px ${color}80` // Glow effect based on verdict
+                    position: 'relative',
+                    width: '44px',
+                    height: '54px',
+                    filter: `drop-shadow(0 4px 6px ${color}60)`, // Soft glow based on verdict
+                    zIndex: isSelected ? 10 : 1,
+                    transformOrigin: 'bottom center',
                   }}>
-                    <MapPin color="white" size={24} />
+                    {/* The Teardrop Background PIN Shape */}
+                    <svg width="44" height="54" viewBox="0 0 44 54" style={{ position: 'absolute', top: 0, left: 0 }}>
+                      <path 
+                        d="M22,2 C10.95,2 2,10.95 2,22 C2,34 22,52 22,52 C22,52 42,34 42,22 C42,10.95 33.05,2 22,2 Z" 
+                        fill={color}
+                        stroke="white"
+                        strokeWidth="2"
+                      />
+                    </svg>
+
+                    {/* Inner Circle displaying the Image or Fallback MapPin */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '6px',
+                      left: '6px',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      background: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                    }}>
+                      {review.logoUrl ? (
+                        <img 
+                          src={review.logoUrl} 
+                          alt={review.restaurantName}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <MapPin color={color} size={18} />
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               </Marker>
