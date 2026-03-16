@@ -89,6 +89,14 @@ export function Sidebar({
 
   // Mobile collapsed state logic
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Automatically expand the sheet when a pin/map is clicked (mode changes from list)
   useEffect(() => {
@@ -131,17 +139,22 @@ export function Sidebar({
 
   return (
     <motion.div 
-      className={`glass-panel glass-sidebar ${mode === 'list' && !isMobileExpanded ? 'collapsed-mobile' : ''}`}
+      className="glass-panel glass-sidebar"
       initial={{ x: -400, opacity: 0 }}
-      animate={{ x: 0, opacity: 1, y: 0 }}
+      animate={{ 
+        x: 0, 
+        opacity: 1, 
+        y: isMobile && mode === 'list' && !isMobileExpanded ? 'calc(100% - 52px)' : '0' 
+      }}
       transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.2 }}
-      drag="y"
+      drag={isMobile ? "y" : false}
       dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={{ top: 0, bottom: 0.5 }} // Only allow pulling down gently before snap
+      dragElastic={{ top: 0.5, bottom: 0.5 }} // Allow elastic pulling UP too
       onDragEnd={(_, info) => {
-        // If dragged down far enough or fast enough, collapse it
         if (info.offset.y > 50 || info.velocity.y > 500) {
           setIsMobileExpanded(false);
+        } else if (info.offset.y < -50 || info.velocity.y < -500) {
+          setIsMobileExpanded(true);
         }
       }}
       style={{

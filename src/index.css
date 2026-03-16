@@ -169,6 +169,7 @@ h3 { font-size: 1.5rem; }
     padding: 16px 20px;
   }
   
+  
   .glass-sidebar {
     top: auto;
     left: 0;
@@ -180,10 +181,6 @@ h3 { font-size: 1.5rem; }
     border-bottom: none;
     box-shadow: 0 -8px 32px 0 rgba(0, 0, 0, 0.4);
     transform: translateY(0);
-  }
-  
-  .glass-sidebar.collapsed-mobile {
-    transform: translateY(calc(100% - 52px)) !important;
   }
 
   .mobile-pull-tab {
