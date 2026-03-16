@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { Navigation, Trash2, ArrowLeft, Star, Plus, ExternalLink } from 'lucide-react';
 import type { BurgerReview, SidebarMode, Verdict } from '../App';
 
@@ -90,6 +90,7 @@ export function Sidebar({
   // Mobile collapsed state logic
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const dragControls = useDragControls();
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 768);
@@ -144,12 +145,15 @@ export function Sidebar({
       animate={{ 
         x: 0, 
         opacity: 1, 
-        y: isMobile && mode === 'list' && !isMobileExpanded ? 'calc(100% - 52px)' : '0' 
+        y: 0,
+        ...(isMobile ? { height: isMobileExpanded ? '100dvh' : '60px' } : {})
       }}
       transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.2 }}
       drag={isMobile ? "y" : false}
+      dragControls={dragControls}
+      dragListener={false}
       dragConstraints={{ top: 0, bottom: 0 }}
-      dragElastic={{ top: 0.5, bottom: 0.5 }} // Allow elastic pulling UP too
+      dragElastic={{ top: 0.3, bottom: 0.3 }}
       onDragEnd={(_, info) => {
         if (info.offset.y > 50 || info.velocity.y > 500) {
           setIsMobileExpanded(false);
@@ -167,10 +171,12 @@ export function Sidebar({
       {/* Mobile Pull Handle */}
       <div 
         className="mobile-pull-tab" 
+        onPointerDown={(e) => dragControls.start(e)}
         onClick={(e) => {
           e.stopPropagation();
           setIsMobileExpanded(prev => !prev);
         }}
+        style={{ cursor: 'grab', touchAction: 'none' }}
       >
         <div className="pull-tab-handle" />
       </div>
