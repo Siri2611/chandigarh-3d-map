@@ -146,7 +146,7 @@ export function Sidebar({
         x: 0, 
         opacity: 1, 
         y: 0,
-        ...(isMobile ? { height: isMobileExpanded ? '100dvh' : '60px' } : {})
+        ...(isMobile ? { height: isMobileExpanded ? '50dvh' : '60px' } : {})
       }}
       transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.2 }}
       drag={isMobile ? "y" : false}
