@@ -149,7 +149,6 @@ h3 { font-size: 1.5rem; }
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-content-scroll {
