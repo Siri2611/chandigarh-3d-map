@@ -228,7 +228,9 @@ function App() {
         const { param_averages, overall_rating } = computeAverages(newRatings);
         
         // Update overall_rating in Supabase (fire and forget)
-        supabase.from('restaurants').update({ overall_rating }).eq('id', restaurantId).then(() => {});
+        if (supabase) {
+          supabase.from('restaurants').update({ overall_rating }).eq('id', restaurantId).then(() => {});
+        }
         
         return { ...r, ratings: newRatings, param_averages, overall_rating };
       }));
@@ -256,7 +258,9 @@ function App() {
       const newRatings = r.ratings.filter(rt => rt.id !== ratingId);
       const { param_averages, overall_rating } = computeAverages(newRatings);
       
-      supabase.from('restaurants').update({ overall_rating }).eq('id', restaurantId).then(() => {});
+      if (supabase) {
+        supabase.from('restaurants').update({ overall_rating }).eq('id', restaurantId).then(() => {});
+      }
       
       return { ...r, ratings: newRatings, param_averages, overall_rating };
     }));
