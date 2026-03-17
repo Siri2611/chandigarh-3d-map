@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { Navigation, Trash2, ArrowLeft, Star, Plus, ExternalLink, UserPlus, Users } from 'lucide-react';
 import type { Restaurant, ReviewerRating, SidebarMode, RatingParam } from '../App';
 import { RATING_PARAMS, PARAM_LABELS } from '../App';
+import { BurgerScorecard } from './BurgerScorecard';
 
 interface SidebarProps {
   mode: SidebarMode;
@@ -67,6 +68,9 @@ export function Sidebar({
   // ─── Edit Reviewer Form State ───
   const [expandedReviewerId, setExpandedReviewerId] = useState<string | null>(null);
   const [editReviewerRatings, setEditReviewerRatings] = useState<Record<RatingParam, number> | null>(null);
+
+  // ─── Scorecard State ───
+  const [showScorecard, setShowScorecard] = useState(false);
 
   // ─── Add Reviewer Form State ───
   const [reviewerName, setReviewerName] = useState('');
@@ -322,9 +326,10 @@ export function Sidebar({
               {selectedRestaurant.ratings.length > 0 && (
                 <div style={{
                   display: 'flex', flexDirection: 'column', gap: '12px',
-                  background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(234, 179, 8, 0.04))', 
+                  background: 'radial-gradient(circle at center, rgba(249, 115, 22, 0.25), rgba(251, 191, 36, 0.04))', 
                   padding: '16px', borderRadius: 'var(--border-radius-md)',
-                  border: '1px solid rgba(249, 115, 22, 0.15)'
+                  border: '1.5px solid var(--accent-primary)',
+                  boxShadow: '0 4px 12px rgba(249, 115, 22, 0.08)'
                 }}>
                   <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)', margin: 0 }}>
                     Average Ratings
@@ -340,6 +345,17 @@ export function Sidebar({
                       </div>
                     </div>
                   ))}
+                  
+                  <p 
+                    onClick={() => setShowScorecard(true)} 
+                    style={{
+                      textAlign: 'center', marginTop: '12px', cursor: 'pointer',
+                      textDecoration: 'underline', color: 'var(--accent-primary)',
+                      fontSize: '0.85rem', fontWeight: 600
+                    }}
+                  >
+                    Reveal Scorecard
+                  </p>
                 </div>
               )}
 
@@ -529,6 +545,16 @@ export function Sidebar({
                   <Trash2 size={16} /> <span className="text-sm font-medium">Delete Restaurant</span>
                 </motion.button>
               )}
+
+              {/* Burger Scorecard Overlay Modal */}
+              <BurgerScorecard 
+                isOpen={showScorecard}
+                onClose={() => setShowScorecard(false)}
+                ratings={selectedRestaurant.param_averages}
+                overallRating={selectedRestaurant.overall_rating}
+                burgerName={selectedRestaurant.burger_name}
+                restaurantName={selectedRestaurant.name}
+              />
             </motion.div>
           )}
 
