@@ -53,6 +53,7 @@ export interface Restaurant {
   longitude: number;
   image_url?: string;
   location_url?: string;
+  burger_name?: string;
   overall_rating: number;
   created_at?: string;
   // Client-side computed
@@ -166,11 +167,12 @@ function App() {
   }, []);
 
   // ─── Create Restaurant ───
-  const handleCreateRestaurant = useCallback(async (data: { name: string; image_url?: string; location_url?: string }) => {
+  const handleCreateRestaurant = useCallback(async (data: { name: string; burger_name?: string; image_url?: string; location_url?: string }) => {
     if (!draftLocation || !supabase) return;
     
     const newRestaurant = {
       name: data.name,
+      burger_name: data.burger_name || null,
       latitude: draftLocation.latitude,
       longitude: draftLocation.longitude,
       image_url: data.image_url || null,

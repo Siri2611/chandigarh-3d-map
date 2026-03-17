@@ -11,7 +11,7 @@ interface SidebarProps {
   selectedRestaurantId: string | null;
   onSelectRestaurant: (id: string | null) => void;
   onDeleteRestaurant: (id: string) => void;
-  onCreateRestaurant: (data: { name: string; image_url?: string; location_url?: string }) => void;
+  onCreateRestaurant: (data: { name: string; burger_name?: string; image_url?: string; location_url?: string }) => void;
   onAddReviewerRating: (restaurantId: string, data: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => void;
   onUpdateReviewerRating: (ratingId: string, restaurantId: string, data: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => void;
   onDeleteReviewerRating: (ratingId: string, restaurantId: string) => void;
@@ -60,6 +60,7 @@ export function Sidebar({
   
   // ─── Create Restaurant Form State ───
   const [restaurantName, setRestaurantName] = useState('');
+  const [burgerName, setBurgerName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [locationUrl, setLocationUrl] = useState('');
 
@@ -97,10 +98,12 @@ export function Sidebar({
     if (!restaurantName.trim()) return;
     onCreateRestaurant({
       name: restaurantName.trim(),
+      burger_name: burgerName.trim() || undefined,
       image_url: imageUrl.trim() || undefined,
       location_url: locationUrl.trim() || undefined,
     });
     setRestaurantName('');
+    setBurgerName('');
     setImageUrl('');
     setLocationUrl('');
   };
@@ -241,10 +244,13 @@ export function Sidebar({
                         {restaurant.image_url && (
                           <img src={restaurant.image_url} alt={restaurant.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
                         )}
-                        <h3 className="text-sm font-semibold" style={{ margin: 0 }}>{restaurant.name}</h3>
+                        <div>
+                          <h3 className="text-sm font-semibold" style={{ margin: 0 }}>{restaurant.name}</h3>
+                          {restaurant.burger_name && <p className="text-xs text-muted" style={{ margin: 0, opacity: 0.7 }}>{restaurant.burger_name}</p>}
+                        </div>
                       </div>
                       <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-                        <Users size={12} style={{ display: 'inline', marginRight: '4px' }} />{restaurant.ratings.length}
+                        {/* Removed reviewer count icon row */}
                       </div>
                     </div>
                     <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -283,6 +289,11 @@ export function Sidebar({
                       <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.3rem', lineHeight: 1.2 }}>
                         {selectedRestaurant.name}
                       </h2>
+                      {selectedRestaurant.burger_name && (
+                        <p className="text-xs text-muted" style={{ margin: 0, marginTop: '-2px' }}>
+                          {selectedRestaurant.burger_name}
+                        </p>
+                      )}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <StarRating value={selectedRestaurant.overall_rating} />
                         <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>
@@ -311,7 +322,9 @@ export function Sidebar({
               {selectedRestaurant.ratings.length > 0 && (
                 <div style={{
                   display: 'flex', flexDirection: 'column', gap: '12px',
-                  background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--border-radius-md)'
+                  background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(234, 179, 8, 0.04))', 
+                  padding: '16px', borderRadius: 'var(--border-radius-md)',
+                  border: '1px solid rgba(249, 115, 22, 0.15)'
                 }}>
                   <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)', margin: 0 }}>
                     Average Ratings
@@ -538,6 +551,13 @@ export function Sidebar({
                   placeholder="Restaurant Name *" 
                   value={restaurantName}
                   onChange={e => setRestaurantName(e.target.value)}
+                  style={inputStyle}
+                />
+                <input 
+                  type="text" 
+                  placeholder="Burger Name *" 
+                  value={burgerName}
+                  onChange={e => setBurgerName(e.target.value)}
                   style={inputStyle}
                 />
                 <input
