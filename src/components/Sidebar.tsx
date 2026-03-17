@@ -346,16 +346,18 @@ export function Sidebar({
                     </div>
                   ))}
                   
-                  <p 
-                    onClick={() => setShowScorecard(true)} 
-                    style={{
-                      textAlign: 'center', marginTop: '12px', cursor: 'pointer',
-                      textDecoration: 'underline', color: 'var(--accent-primary)',
-                      fontSize: '0.85rem', fontWeight: 600
-                    }}
-                  >
-                    Reveal Scorecard
-                  </p>
+                  {isAdmin && (
+                    <p 
+                      onClick={() => setShowScorecard(true)} 
+                      style={{
+                        textAlign: 'center', marginTop: '12px', cursor: 'pointer',
+                        textDecoration: 'underline', color: 'var(--accent-primary)',
+                        fontSize: '0.85rem', fontWeight: 600
+                      }}
+                    >
+                      Reveal Scorecard
+                    </p>
+                  )}
                 </div>
               )}
 
