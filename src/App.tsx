@@ -270,16 +270,22 @@ function App() {
   const handleUpdateReviewerRating = useCallback(async (ratingId: string, restaurantId: string, ratingData: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => {
     if (!supabase) return;
     
-    const { data: updated, error } = await supabase
+    const { data, error } = await supabase
       .from('reviewer_ratings')
       .update(ratingData)
       .eq('id', ratingId)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error('Error updating reviewer rating:', error);
       alert(`Failed to update reviewer rating: ${error.message}`);
+      return;
+    }
+
+    const updated = data?.[0];
+    if (!updated) {
+      console.warn('Reviewer rating not found or not updated for ID:', ratingId);
+      alert('Reviewer rating could not be updated in the database.');
       return;
     }
 
