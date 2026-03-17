@@ -13,6 +13,7 @@ interface SidebarProps {
   onDeleteRestaurant: (id: string) => void;
   onCreateRestaurant: (data: { name: string; image_url?: string; location_url?: string }) => void;
   onAddReviewerRating: (restaurantId: string, data: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => void;
+  onUpdateReviewerRating: (ratingId: string, restaurantId: string, data: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => void;
   onDeleteReviewerRating: (ratingId: string, restaurantId: string) => void;
   draftLocation: { longitude: number; latitude: number } | null;
   isAdmin: boolean;
@@ -51,6 +52,7 @@ export function Sidebar({
   onDeleteRestaurant, 
   onCreateRestaurant,
   onAddReviewerRating,
+  onUpdateReviewerRating,
   onDeleteReviewerRating,
   draftLocation,
   isAdmin
@@ -60,6 +62,10 @@ export function Sidebar({
   const [restaurantName, setRestaurantName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [locationUrl, setLocationUrl] = useState('');
+
+  // ─── Edit Reviewer Form State ───
+  const [expandedReviewerId, setExpandedReviewerId] = useState<string | null>(null);
+  const [editReviewerRatings, setEditReviewerRatings] = useState<Record<RatingParam, number> | null>(null);
 
   // ─── Add Reviewer Form State ───
   const [reviewerName, setReviewerName] = useState('');
@@ -345,13 +351,13 @@ export function Sidebar({
                 </a>
               )}
 
-              {/* ─── Admin: Reviewers Section ─── */}
-              {isAdmin && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)', margin: 0 }}>
-                      Reviewers
-                    </p>
+              {/* ─── Reviewers Section ─── */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                    Reviewers
+                  </p>
+                  {isAdmin && (
                     <button
                       onClick={() => onSetMode('add-reviewer')}
                       style={{
@@ -363,41 +369,134 @@ export function Sidebar({
                     >
                       <UserPlus size={14} /> Add Reviewer
                     </button>
-                  </div>
-
-                  {selectedRestaurant.ratings.length === 0 ? (
-                    <p className="text-xs text-muted" style={{ opacity: 0.6, fontStyle: 'italic' }}>
-                      No reviewers yet. Add one to start rating!
-                    </p>
-                  ) : (
-                    selectedRestaurant.ratings.map(rating => (
-                      <div key={rating.id} style={{
-                        padding: '12px', background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid var(--glass-border)', borderRadius: 'var(--border-radius-sm)',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                      }}>
-                        <div>
-                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                            {rating.reviewer_name}
-                          </span>
-                          <p className="text-xs text-muted" style={{ margin: '2px 0 0' }}>
-                            Avg: {(RATING_PARAMS.reduce((s, p) => s + (rating[p] || 0), 0) / 10).toFixed(1)}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => onDeleteReviewerRating(rating.id, selectedRestaurant.id)}
-                          style={{
-                            background: 'transparent', border: 'none',
-                            color: 'var(--text-muted)', cursor: 'pointer', padding: '4px'
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))
                   )}
                 </div>
-              )}
+
+                {selectedRestaurant.ratings.length === 0 ? (
+                  <p className="text-xs text-muted" style={{ opacity: 0.6, fontStyle: 'italic' }}>
+                    No reviewers yet. {isAdmin && "Add one to start rating!"}
+                  </p>
+                ) : (
+                  selectedRestaurant.ratings.map(rating => {
+                    const isExpanded = expandedReviewerId === rating.id;
+                    const overall = (RATING_PARAMS.reduce((s, p) => s + (rating[p] || 0), 0) / 10).toFixed(1);
+
+                    return (
+                      <div key={rating.id} style={{
+                        padding: '12px', background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid var(--glass-border)', borderRadius: 'var(--border-radius-sm)',
+                        display: 'flex', flexDirection: 'column', gap: '12px'
+                      }}>
+                        <div 
+                          onClick={() => {
+                            if (isExpanded) {
+                              setExpandedReviewerId(null);
+                              setEditReviewerRatings(null);
+                            } else {
+                              setExpandedReviewerId(rating.id);
+                              // Hydrate edit state
+                              const currentRatings: any = {};
+                              RATING_PARAMS.forEach(p => currentRatings[p] = rating[p] || 0);
+                              setEditReviewerRatings(currentRatings);
+                            }
+                          }}
+                          style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                        >
+                          <div>
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                              {rating.reviewer_name}
+                            </span>
+                            <p className="text-xs text-muted" style={{ margin: '2px 0 0' }}>
+                              Overall: {overall}/5
+                            </p>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <StarRating value={parseFloat(overall)} />
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onDeleteReviewerRating(rating.id, selectedRestaurant.id);
+                                }}
+                                style={{
+                                  background: 'transparent', border: 'none',
+                                  color: 'rgba(239, 68, 68, 0.7)', cursor: 'pointer', padding: '4px'
+                                }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Expanded Content */}
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '10px' }}
+                            >
+                              {RATING_PARAMS.map(param => {
+                                const val = editReviewerRatings ? editReviewerRatings[param] : rating[param] || 0;
+                                return (
+                                  <div key={param} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <label className="text-xs text-muted" style={{ fontSize: '0.7rem' }}>{PARAM_LABELS[param]}</label>
+                                      <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)', fontSize: '0.7rem' }}>
+                                        {val.toFixed(1)}
+                                      </span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <StarRating value={val} />
+                                      {isAdmin && editReviewerRatings && (
+                                        <input 
+                                          type="range" min="0" max="5" step="0.1" 
+                                          value={val} 
+                                          onClick={e => e.stopPropagation()}
+                                          onChange={e => {
+                                            e.stopPropagation();
+                                            setEditReviewerRatings(prev => prev ? ({ ...prev, [param]: parseFloat(e.target.value) }) : null);
+                                          }} 
+                                          style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '2px' }} 
+                                        />
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                              
+                              {isAdmin && editReviewerRatings && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onUpdateReviewerRating(rating.id, selectedRestaurant.id, {
+                                      reviewer_name: rating.reviewer_name,
+                                      ...editReviewerRatings
+                                    });
+                                    setExpandedReviewerId(null);
+                                    setEditReviewerRatings(null);
+                                  }}
+                                  style={{
+                                    background: 'var(--accent-gradient)', border: 'none', color: 'white',
+                                    padding: '8px', borderRadius: 'var(--border-radius-sm)',
+                                    fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                                    marginTop: '6px', width: '100%'
+                                  }}
+                                >
+                                  Save Changes
+                                </button>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
 
               {/* Admin: Delete Restaurant */}
               {isAdmin && (

@@ -266,6 +266,38 @@ function App() {
     }));
   }, []);
 
+  // ─── Update Reviewer Rating ───
+  const handleUpdateReviewerRating = useCallback(async (ratingId: string, restaurantId: string, ratingData: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => {
+    if (!supabase) return;
+    
+    const { data: updated, error } = await supabase
+      .from('reviewer_ratings')
+      .update(ratingData)
+      .eq('id', ratingId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating reviewer rating:', error);
+      alert(`Failed to update reviewer rating: ${error.message}`);
+      return;
+    }
+
+    if (updated) {
+      setRestaurants(prev => prev.map(r => {
+        if (r.id !== restaurantId) return r;
+        const newRatings = r.ratings.map(rt => rt.id === ratingId ? (updated as ReviewerRating) : rt);
+        const { param_averages, overall_rating } = computeAverages(newRatings);
+        
+        if (supabase) {
+          supabase.from('restaurants').update({ overall_rating }).eq('id', restaurantId).then(() => {});
+        }
+        
+        return { ...r, ratings: newRatings, param_averages, overall_rating };
+      }));
+    }
+  }, []);
+
   // ─── Delete Restaurant ───
   const handleDeleteRestaurant = useCallback(async (id: string) => {
     if (!supabase) return;
@@ -440,6 +472,7 @@ function App() {
         onDeleteRestaurant={handleDeleteRestaurant}
         onCreateRestaurant={handleCreateRestaurant}
         onAddReviewerRating={handleAddReviewerRating}
+        onUpdateReviewerRating={handleUpdateReviewerRating}
         onDeleteReviewerRating={handleDeleteReviewerRating}
         draftLocation={draftLocation}
         isAdmin={isAdmin}
