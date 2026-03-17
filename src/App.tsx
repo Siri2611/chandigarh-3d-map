@@ -141,12 +141,27 @@ function App() {
     }
   };
 
-  const handlePasswordSubmit = () => {
-    if (passwordInput === 'burgerboss') {
-      setIsAdmin(true);
-      setShowPasswordPrompt(false);
-      setPasswordInput('');
-    } else {
+  const handlePasswordSubmit = async () => {
+    if (!supabase) return;
+
+    try {
+      const { data, error } = await supabase.rpc('verify_admin', { guess: passwordInput });
+
+      if (error) {
+        console.error('Error verifying admin:', error);
+        setPasswordError(true);
+        return;
+      }
+
+      if (data === true) {
+        setIsAdmin(true);
+        setShowPasswordPrompt(false);
+        setPasswordInput('');
+      } else {
+        setPasswordError(true);
+      }
+    } catch (err) {
+      console.error('Verify admin exception:', err);
       setPasswordError(true);
     }
   };
