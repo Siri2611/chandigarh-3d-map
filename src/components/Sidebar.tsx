@@ -1,27 +1,27 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
-import { Navigation, Trash2, ArrowLeft, Star, Plus, ExternalLink } from 'lucide-react';
-import type { BurgerReview, SidebarMode, Verdict } from '../App';
+import { Navigation, Trash2, ArrowLeft, Star, Plus, ExternalLink, UserPlus, Users } from 'lucide-react';
+import type { Restaurant, ReviewerRating, SidebarMode, RatingParam } from '../App';
+import { RATING_PARAMS, PARAM_LABELS } from '../App';
 
 interface SidebarProps {
   mode: SidebarMode;
   onSetMode: (mode: SidebarMode) => void;
-  reviews: BurgerReview[];
-  selectedReviewId: string | null;
-  onSelectReview: (id: string | null) => void;
-  onDeleteReview: (id: string) => void;
-  onSaveReview: (reviewData: Omit<BurgerReview, 'id' | 'longitude' | 'latitude'>) => void;
+  restaurants: Restaurant[];
+  selectedRestaurantId: string | null;
+  onSelectRestaurant: (id: string | null) => void;
+  onDeleteRestaurant: (id: string) => void;
+  onCreateRestaurant: (data: { name: string; image_url?: string; location_url?: string }) => void;
+  onAddReviewerRating: (restaurantId: string, data: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => void;
+  onDeleteReviewerRating: (ratingId: string, restaurantId: string) => void;
   draftLocation: { longitude: number; latitude: number } | null;
   isAdmin: boolean;
 }
 
-const getVerdictColor = (verdict: Verdict) => {
-  switch (verdict) {
-    case 'Eat Again': return '#22c55e';
-    case 'Try Once': return '#eab308';
-    case 'Avoid': return '#ef4444';
-    default: return 'var(--accent-primary)';
-  }
+const getRatingColor = (rating: number) => {
+  if (rating >= 4) return '#22c55e';
+  if (rating >= 2.5) return '#eab308';
+  return '#ef4444';
 };
 
 const StarRating = ({ value }: { value: number }) => {
@@ -29,32 +29,11 @@ const StarRating = ({ value }: { value: number }) => {
     <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
       {[1, 2, 3, 4, 5].map((star) => {
         const fillPercentage = Math.max(0, Math.min(100, (value - (star - 1)) * 100));
-
         return (
           <div key={star} style={{ position: 'relative', width: '16px', height: '16px' }}>
-            {/* Background Empty Star */}
-            <Star 
-              size={16} 
-              color="var(--text-muted)" 
-              fill="transparent" 
-              style={{ position: 'absolute', top: 0, left: 0 }} 
-            />
-            
-            {/* Front Filled Star clipped by width */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: `${fillPercentage}%`,
-              overflow: 'hidden',
-              height: '16px'
-            }}>
-              <Star 
-                size={16} 
-                color="var(--accent-primary)" 
-                fill="var(--accent-primary)" 
-                style={{ position: 'absolute', top: 0, left: 0 }} 
-              />
+            <Star size={16} color="var(--text-muted)" fill="transparent" style={{ position: 'absolute', top: 0, left: 0 }} />
+            <div style={{ position: 'absolute', top: 0, left: 0, width: `${fillPercentage}%`, overflow: 'hidden', height: '16px' }}>
+              <Star size={16} color="var(--accent-primary)" fill="var(--accent-primary)" style={{ position: 'absolute', top: 0, left: 0 }} />
             </div>
           </div>
         );
@@ -65,27 +44,28 @@ const StarRating = ({ value }: { value: number }) => {
 
 export function Sidebar({ 
   mode, 
-  /* onSetMode unused in this simplified version */
-  reviews, 
-  selectedReviewId, 
-  onSelectReview, 
-  onDeleteReview, 
-  onSaveReview,
+  onSetMode,
+  restaurants, 
+  selectedRestaurantId, 
+  onSelectRestaurant, 
+  onDeleteRestaurant, 
+  onCreateRestaurant,
+  onAddReviewerRating,
+  onDeleteReviewerRating,
   draftLocation,
   isAdmin
 }: SidebarProps) {
   
-  // Form State
+  // ─── Create Restaurant Form State ───
   const [restaurantName, setRestaurantName] = useState('');
-  const [burgerName, setBurgerName] = useState('');
-  const [taste, setTaste] = useState(3);
-  const [texture, setTexture] = useState(3);
-  const [size, setSize] = useState(3);
-  const [overall, setOverall] = useState(3);
-  const [verdict, setVerdict] = useState<Verdict>('Try Once');
-  const [reviewText, setReviewText] = useState('');
-  const [logoUrl, setLogoUrl] = useState('');
-  const [locationLink, setLocationLink] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [locationUrl, setLocationUrl] = useState('');
+
+  // ─── Add Reviewer Form State ───
+  const [reviewerName, setReviewerName] = useState('');
+  const [reviewerRatings, setReviewerRatings] = useState<Record<RatingParam, number>>(
+    Object.fromEntries(RATING_PARAMS.map(p => [p, 3])) as Record<RatingParam, number>
+  );
 
   // Mobile collapsed state logic
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
@@ -99,44 +79,46 @@ export function Sidebar({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Automatically expand the sheet when a pin/map is clicked (mode changes from list)
   useEffect(() => {
     if (mode !== 'list') {
       setIsMobileExpanded(true);
     } else {
-      setIsMobileExpanded(false); // Collapse immediately when returning to list mode
+      setIsMobileExpanded(false);
     }
   }, [mode]);
 
-  const handleSave = () => {
-    if (!restaurantName || !burgerName) return;
-    onSaveReview({
-      restaurantName,
-      burgerName,
-      taste,
-      texture,
-      size,
-      overall,
-      verdict,
-      reviewText,
-      ...(logoUrl.trim() ? { logoUrl: logoUrl.trim() } : {}),
-      ...(locationLink.trim() ? { locationLink: locationLink.trim() } : {})
+  const handleCreateRestaurant = () => {
+    if (!restaurantName.trim()) return;
+    onCreateRestaurant({
+      name: restaurantName.trim(),
+      image_url: imageUrl.trim() || undefined,
+      location_url: locationUrl.trim() || undefined,
     });
-    
-    // Reset form fields
     setRestaurantName('');
-    setBurgerName('');
-    setLogoUrl('');
-    setLocationLink('');
-    setTaste(3);
-    setTexture(3);
-    setSize(3);
-    setOverall(3);
-    setVerdict('Try Once');
-    setReviewText('');
+    setImageUrl('');
+    setLocationUrl('');
   };
 
-  const selectedReview = reviews.find(r => r.id === selectedReviewId);
+  const handleSubmitReviewerRating = () => {
+    if (!reviewerName.trim() || !selectedRestaurantId) return;
+    onAddReviewerRating(selectedRestaurantId, {
+      reviewer_name: reviewerName.trim(),
+      ...reviewerRatings,
+    });
+    setReviewerName('');
+    setReviewerRatings(Object.fromEntries(RATING_PARAMS.map(p => [p, 3])) as Record<RatingParam, number>);
+  };
+
+  const selectedRestaurant = restaurants.find(r => r.id === selectedRestaurantId);
+
+  const headerTitle = (() => {
+    switch (mode) {
+      case 'detail': return 'Restaurant Details';
+      case 'add': return 'New Restaurant';
+      case 'add-reviewer': return 'Add Reviewer';
+      default: return '';
+    }
+  })();
 
   return (
     <motion.div 
@@ -145,8 +127,9 @@ export function Sidebar({
       animate={{ 
         x: 0, 
         opacity: 1, 
-        y: 0,
-        ...(isMobile ? { height: isMobileExpanded ? '50dvh' : '60px' } : {})
+        y: isMobile 
+          ? (isMobileExpanded ? 0 : 'calc(50dvh - 60px)') 
+          : 0
       }}
       transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.2 }}
       drag={isMobile ? "y" : false}
@@ -186,7 +169,13 @@ export function Sidebar({
         <div style={{ padding: '24px 24px 0', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <motion.button
             whileHover={{ x: -2 }}
-            onClick={() => onSelectReview(null)}
+            onClick={() => {
+              if (mode === 'add-reviewer') {
+                onSetMode('detail');
+              } else {
+                onSelectRestaurant(null);
+              }
+            }}
             style={{
               background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px'
             }}
@@ -194,7 +183,7 @@ export function Sidebar({
             <ArrowLeft size={20} />
           </motion.button>
           <span className="font-semibold" style={{ color: 'var(--text-primary)', fontSize: '1.1rem' }}>
-            {mode === 'detail' ? 'Review Details' : 'Draft New Review'}
+            {headerTitle}
           </span>
         </div>
       )}
@@ -202,7 +191,7 @@ export function Sidebar({
       <div className="sidebar-content-scroll" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
         <AnimatePresence mode="wait">
           
-          {/* LIST VIEW */}
+          {/* ═══════════ LIST VIEW ═══════════ */}
           {mode === 'list' && (
             <motion.div
               key="list-view"
@@ -214,45 +203,49 @@ export function Sidebar({
               <div style={{ marginBottom: '8px' }}>
                 <p className="text-sm text-secondary">
                   {isAdmin 
-                    ? <><strong>Click the map</strong> to draft a new review, or explore saved reviews below.</>
-                    : <>Explore the mapped burgers below. Click a pin to read the full review!</>
+                    ? <><strong>Click the map</strong> to add a new restaurant, or explore rated spots below.</>
+                    : <>Explore the mapped burgers below. Click a pin to see the full breakdown!</>
                   }
                 </p>
               </div>
 
-              {reviews.length === 0 ? (
+              {restaurants.length === 0 ? (
                 <div className="flex-center" style={{ flexDirection: 'column', opacity: 0.5, padding: '40px 0', textAlign: 'center' }}>
                   <Navigation size={40} style={{ marginBottom: '16px' }} />
-                  <p className="text-sm">No burgers mapped yet.<br/>Time to start eating!</p>
+                  <p className="text-sm">No restaurants mapped yet.<br/>Time to start eating!</p>
                 </div>
               ) : (
-                reviews.map(review => (
+                restaurants.map(restaurant => (
                   <motion.div
-                    key={review.id}
+                    key={restaurant.id}
                     whileHover={{ scale: 1.02 }}
-                    onClick={() => onSelectReview(review.id)}
+                    onClick={() => onSelectRestaurant(restaurant.id)}
                     style={{
                       padding: '16px',
                       background: 'rgba(255, 255, 255, 0.05)',
                       border: `1px solid var(--glass-border)`,
-                      borderLeft: `4px solid ${getVerdictColor(review.verdict)}`,
+                      borderLeft: `4px solid ${getRatingColor(restaurant.overall_rating)}`,
                       borderRadius: 'var(--border-radius-md)',
                       cursor: 'pointer',
                       transition: 'background 0.2s',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <h3 className="text-sm font-semibold" style={{ margin: 0 }}>{review.restaurantName}</h3>
-                        <p className="text-xs text-muted" style={{ margin: 0, marginTop: '2px' }}>{review.burgerName}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {restaurant.image_url && (
+                          <img src={restaurant.image_url} alt={restaurant.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                        )}
+                        <h3 className="text-sm font-semibold" style={{ margin: 0 }}>{restaurant.name}</h3>
                       </div>
-                      <div className="text-xs font-medium" style={{ color: getVerdictColor(review.verdict) }}>
-                        {review.verdict}
+                      <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                        <Users size={12} style={{ display: 'inline', marginRight: '4px' }} />{restaurant.ratings.length}
                       </div>
                     </div>
                     <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <StarRating value={review.overall} />
-                      <span className="text-xs text-secondary">{review.overall}/5</span>
+                      <StarRating value={restaurant.overall_rating} />
+                      <span className="text-xs text-secondary">
+                        {restaurant.overall_rating > 0 ? `${restaurant.overall_rating.toFixed(1)}/5` : 'No ratings'}
+                      </span>
                     </div>
                   </motion.div>
                 ))
@@ -260,8 +253,8 @@ export function Sidebar({
             </motion.div>
           )}
 
-          {/* DETAIL VIEW */}
-          {mode === 'detail' && selectedReview && (
+          {/* ═══════════ DETAIL VIEW ═══════════ */}
+          {mode === 'detail' && selectedRestaurant && (
             <motion.div
               key="detail-view"
               initial={{ opacity: 0, x: 20 }}
@@ -269,105 +262,80 @@ export function Sidebar({
               exit={{ opacity: 0, x: 20 }}
               style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}
             >
+              {/* Restaurant Header */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {selectedReview.logoUrl && (
+                    {selectedRestaurant.image_url && (
                       <img 
-                        src={selectedReview.logoUrl} 
-                        alt={`${selectedReview.restaurantName} logo`}
-                        style={{ 
-                          width: '40px', 
-                          height: '40px', 
-                          borderRadius: '50%', 
-                          objectFit: 'cover',
-                          border: '2px solid rgba(249, 115, 22, 0.2)'
-                        }} 
+                        src={selectedRestaurant.image_url} 
+                        alt={selectedRestaurant.name}
+                        style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(249, 115, 22, 0.2)' }} 
                       />
                     )}
-                    <div style={{ display: 'flex',flexDirection: 'column', gap: '8px' }}>
-                      <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.5rem', lineHeight: 1.2 }}>
-                        {selectedReview.restaurantName}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.3rem', lineHeight: 1.2 }}>
+                        {selectedRestaurant.name}
                       </h2>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <StarRating value={selectedReview.overall} />
-                        <span className="text-xs font-bold text-accent-primary">{selectedReview.overall}/5</span>
+                        <StarRating value={selectedRestaurant.overall_rating} />
+                        <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>
+                          {selectedRestaurant.overall_rating > 0 ? `${selectedRestaurant.overall_rating.toFixed(1)}/5` : 'No ratings'}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <div style={{
                     padding: '4px 12px',
                     borderRadius: '999px',
-                    fontSize: '0.75rem',
+                    fontSize: '0.7rem',
                     fontWeight: 600,
-                    background: `${getVerdictColor(selectedReview.verdict)}20`,
-                    color: getVerdictColor(selectedReview.verdict),
-                    border: `1px solid ${getVerdictColor(selectedReview.verdict)}40`
+                    background: 'rgba(255,255,255,0.08)',
+                    color: 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}>
-                    {selectedReview.verdict}
+                    <Users size={12} /> {selectedRestaurant.ratings.length} review{selectedRestaurant.ratings.length !== 1 ? 's' : ''}
                   </div>
                 </div>
-                <p className="text-sm text-accent-primary font-medium" style={{ margin: 0 }}>{selectedReview.burgerName}</p>
               </div>
 
-              {/* Stats Grid */}
-              <div style={{
-                display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px',
-                background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--border-radius-md)'
-              }}>
-                <div>
-                  <label className="text-xs text-muted mb-1 block">Taste</label>
-                  <StarRating value={selectedReview.taste} />
+              {/* 10 Parameter Averages Grid */}
+              {selectedRestaurant.ratings.length > 0 && (
+                <div style={{
+                  display: 'flex', flexDirection: 'column', gap: '12px',
+                  background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--border-radius-md)'
+                }}>
+                  <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                    Average Ratings
+                  </p>
+                  {RATING_PARAMS.map(param => (
+                    <div key={param} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)', flex: 1, minWidth: 0 }}>{PARAM_LABELS[param]}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <StarRating value={selectedRestaurant.param_averages[param]} />
+                        <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)', width: '24px', textAlign: 'right' }}>
+                          {selectedRestaurant.param_averages[param].toFixed(1)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <label className="text-xs text-muted mb-1 block">Texture</label>
-                  <StarRating value={selectedReview.texture} />
-                </div>
-                <div>
-                  <label className="text-xs text-muted mb-1 block">Size</label>
-                  <StarRating value={selectedReview.size} />
-                </div>
-                <div>
-                  <label className="text-xs text-muted mb-1 block">Overall</label>
-                  <StarRating value={selectedReview.overall} />
-                </div>
-              </div>
+              )}
 
-              <div style={{ marginTop: 'auto' }}>
-                <p className="text-xs font-medium uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>Review Notes</p>
-                <div 
-                  className="glass-panel text-sm" 
-                  style={{ 
-                    padding: '16px',
-                    color: 'var(--text-primary)',
-                    fontStyle: selectedReview.reviewText ? 'normal' : 'italic',
-                    opacity: selectedReview.reviewText ? 1 : 0.7,
-                    lineHeight: 1.6,
-                    marginBottom: selectedReview.locationLink ? '16px' : '0'
-                  }}
-                >
-                  {selectedReview.reviewText || "No review notes provided."}
-                </div>
-              </div>
-
-              {selectedReview.locationLink && (
+              {/* Location Link */}
+              {selectedRestaurant.location_url && (
                 <a 
-                  href={selectedReview.locationLink}
+                  href={selectedRestaurant.location_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="glass-panel"
                   style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '8px', 
-                    width: '100%', 
-                    padding: '12px',
-                    textDecoration: 'none',
-                    color: 'var(--accent-primary)',
-                    fontWeight: 'bold',
-                    transition: 'background 0.2s',
-                    marginTop: 'auto'
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                    gap: '8px', width: '100%', padding: '12px',
+                    textDecoration: 'none', color: 'var(--accent-primary)',
+                    fontWeight: 'bold', transition: 'background 0.2s',
                   }}
                   onMouseOver={(e) => e.currentTarget.style.background = 'rgba(249, 115, 22, 0.1)'}
                   onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'}
@@ -377,33 +345,82 @@ export function Sidebar({
                 </a>
               )}
 
+              {/* ─── Admin: Reviewers Section ─── */}
+              {isAdmin && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                      Reviewers
+                    </p>
+                    <button
+                      onClick={() => onSetMode('add-reviewer')}
+                      style={{
+                        background: 'var(--accent-gradient)', border: 'none', color: 'white',
+                        padding: '6px 12px', borderRadius: 'var(--border-radius-sm)',
+                        fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '4px'
+                      }}
+                    >
+                      <UserPlus size={14} /> Add Reviewer
+                    </button>
+                  </div>
+
+                  {selectedRestaurant.ratings.length === 0 ? (
+                    <p className="text-xs text-muted" style={{ opacity: 0.6, fontStyle: 'italic' }}>
+                      No reviewers yet. Add one to start rating!
+                    </p>
+                  ) : (
+                    selectedRestaurant.ratings.map(rating => (
+                      <div key={rating.id} style={{
+                        padding: '12px', background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid var(--glass-border)', borderRadius: 'var(--border-radius-sm)',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                      }}>
+                        <div>
+                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                            {rating.reviewer_name}
+                          </span>
+                          <p className="text-xs text-muted" style={{ margin: '2px 0 0' }}>
+                            Avg: {(RATING_PARAMS.reduce((s, p) => s + (rating[p] || 0), 0) / 10).toFixed(1)}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => onDeleteReviewerRating(rating.id, selectedRestaurant.id)}
+                          style={{
+                            background: 'transparent', border: 'none',
+                            color: 'var(--text-muted)', cursor: 'pointer', padding: '4px'
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Admin: Delete Restaurant */}
               {isAdmin && (
                 <motion.button
                   whileHover={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
-                  onClick={() => onDeleteReview(selectedReview.id)}
+                  onClick={() => onDeleteRestaurant(selectedRestaurant.id)}
                   style={{
-                    marginTop: 'auto',
-                    background: 'transparent',
+                    marginTop: 'auto', background: 'transparent',
                     border: '1px solid rgba(239, 68, 68, 0.3)',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
+                    color: 'var(--text-muted)', cursor: 'pointer',
+                    padding: '12px', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', gap: '8px',
                     borderRadius: 'var(--border-radius-md)',
-                    transition: 'background 0.2s',
-                    width: '100%'
+                    transition: 'background 0.2s', width: '100%'
                   }}
                 >
-                  <Trash2 size={16} /> <span className="text-sm font-medium">Delete Review</span>
+                  <Trash2 size={16} /> <span className="text-sm font-medium">Delete Restaurant</span>
                 </motion.button>
               )}
             </motion.div>
           )}
 
-          {/* ADD REVIEW VIEW */}
+          {/* ═══════════ ADD RESTAURANT VIEW ═══════════ */}
           {mode === 'add' && draftLocation && (
             <motion.div
               key="add-view"
@@ -413,158 +430,113 @@ export function Sidebar({
               style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
             >
               <h2 className="text-lg font-semibold" style={{ margin: 0, color: 'var(--text-primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
-                Draft New Review
+                Create Restaurant
               </h2>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <input 
                   type="text" 
-                  placeholder="Restaurant Name" 
+                  placeholder="Restaurant Name *" 
                   value={restaurantName}
                   onChange={e => setRestaurantName(e.target.value)}
                   style={inputStyle}
                 />
                 <input
                   type="text"
-                  placeholder="What's the burger called?"
+                  placeholder="Restaurant Image URL (Optional)"
                   style={inputStyle}
-                  value={burgerName}
-                  onChange={(e) => setBurgerName(e.target.value)}
-                />
-                <input
-                  type="text"
-                  placeholder="Restaurant Logo URL (Optional)"
-                  style={inputStyle}
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
                 />
                 <input
                   type="text"
                   placeholder="Google Maps Link (Optional)"
                   style={inputStyle}
-                  value={locationLink}
-                  onChange={(e) => setLocationLink(e.target.value)}
+                  value={locationUrl}
+                  onChange={(e) => setLocationUrl(e.target.value)}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--border-radius-md)' }}>
-                {/* Taste */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div className="flex-between">
-                    <label className="text-xs text-muted">Taste</label>
-                    <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>{taste.toFixed(1)}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <StarRating value={taste} />
-                    <input 
-                      type="range" min="1" max="5" step="0.1" value={taste} 
-                      onChange={e => setTaste(parseFloat(e.target.value))} 
-                      style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
-                    />
-                  </div>
-                </div>
-
-                {/* Texture */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div className="flex-between">
-                    <label className="text-xs text-muted">Texture</label>
-                    <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>{texture.toFixed(1)}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <StarRating value={texture} />
-                    <input 
-                      type="range" min="1" max="5" step="0.1" value={texture} 
-                      onChange={e => setTexture(parseFloat(e.target.value))} 
-                      style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
-                    />
-                  </div>
-                </div>
-
-                {/* Size */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div className="flex-between">
-                    <label className="text-xs text-muted">Size</label>
-                    <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>{size.toFixed(1)}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <StarRating value={size} />
-                    <input 
-                      type="range" min="1" max="5" step="0.1" value={size} 
-                      onChange={e => setSize(parseFloat(e.target.value))} 
-                      style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
-                    />
-                  </div>
-                </div>
-
-                {/* Overall */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--glass-border)' }}>
-                  <div className="flex-between">
-                    <label className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Overall</label>
-                    <span className="text-sm font-bold" style={{ color: 'var(--accent-primary)' }}>{overall.toFixed(1)}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <StarRating value={overall} />
-                    <input 
-                      type="range" min="1" max="5" step="0.1" value={overall} 
-                      onChange={e => setOverall(parseFloat(e.target.value))} 
-                      style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-muted mb-2 block">Verdict</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {(['Try Once', 'Eat Again', 'Avoid'] as Verdict[]).map(v => (
-                    <button
-                      key={v}
-                      onClick={() => setVerdict(v)}
-                      style={{
-                        flex: 1,
-                        padding: '8px 4px',
-                        background: verdict === v ? `${getVerdictColor(v)}20` : 'rgba(255,255,255,0.05)',
-                        border: `1px solid ${verdict === v ? getVerdictColor(v) : 'var(--glass-border)'}`,
-                        color: verdict === v ? 'white' : 'var(--text-secondary)',
-                        borderRadius: 'var(--border-radius-sm)',
-                        fontSize: '0.75rem',
-                        fontWeight: verdict === v ? 600 : 400,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <textarea 
-                placeholder="Review notes..."
-                value={reviewText}
-                onChange={e => setReviewText(e.target.value)}
-                style={{ ...inputStyle, minHeight: '100px', resize: 'none' }}
-              />
+              <p className="text-xs text-muted" style={{ margin: 0 }}>
+                After creating, you can add reviewer ratings from the detail page.
+              </p>
 
               <button
-                onClick={handleSave}
-                disabled={!restaurantName || !burgerName}
+                onClick={handleCreateRestaurant}
+                disabled={!restaurantName.trim()}
                 style={{
-                  background: (!restaurantName || !burgerName) ? 'rgba(255,255,255,0.1)' : 'var(--accent-gradient)',
-                  color: (!restaurantName || !burgerName) ? 'var(--text-muted)' : 'white',
-                  border: 'none',
-                  padding: '12px',
+                  background: (!restaurantName.trim()) ? 'rgba(255,255,255,0.1)' : 'var(--accent-gradient)',
+                  color: (!restaurantName.trim()) ? 'var(--text-muted)' : 'white',
+                  border: 'none', padding: '12px',
                   borderRadius: 'var(--border-radius-md)',
                   fontWeight: 600,
-                  cursor: (!restaurantName || !burgerName) ? 'not-allowed' : 'pointer',
+                  cursor: (!restaurantName.trim()) ? 'not-allowed' : 'pointer',
                   transition: 'opacity 0.2s',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  gap: '8px'
+                  display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
                 }}
               >
-                <Plus size={18} /> Publish Review
+                <Plus size={18} /> Create Restaurant
+              </button>
+            </motion.div>
+          )}
+
+          {/* ═══════════ ADD REVIEWER VIEW ═══════════ */}
+          {mode === 'add-reviewer' && selectedRestaurant && (
+            <motion.div
+              key="add-reviewer-view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}
+            >
+              <h2 className="text-lg font-semibold" style={{ margin: 0, color: 'var(--text-primary)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+                Rate: {selectedRestaurant.name}
+              </h2>
+
+              <input 
+                type="text" 
+                placeholder="Reviewer Name *" 
+                value={reviewerName}
+                onChange={e => setReviewerName(e.target.value)}
+                style={inputStyle}
+              />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: 'var(--border-radius-md)' }}>
+                {RATING_PARAMS.map(param => (
+                  <div key={param} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="text-xs text-muted">{PARAM_LABELS[param]}</label>
+                      <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>
+                        {reviewerRatings[param].toFixed(1)}
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <StarRating value={reviewerRatings[param]} />
+                      <input 
+                        type="range" min="0" max="5" step="0.1" 
+                        value={reviewerRatings[param]} 
+                        onChange={e => setReviewerRatings(prev => ({ ...prev, [param]: parseFloat(e.target.value) }))} 
+                        style={{ flex: 1, accentColor: 'var(--accent-primary)', height: '4px' }} 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={handleSubmitReviewerRating}
+                disabled={!reviewerName.trim()}
+                style={{
+                  background: (!reviewerName.trim()) ? 'rgba(255,255,255,0.1)' : 'var(--accent-gradient)',
+                  color: (!reviewerName.trim()) ? 'var(--text-muted)' : 'white',
+                  border: 'none', padding: '12px',
+                  borderRadius: 'var(--border-radius-md)',
+                  fontWeight: 600,
+                  cursor: (!reviewerName.trim()) ? 'not-allowed' : 'pointer',
+                  display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                }}
+              >
+                <UserPlus size={18} /> Submit Rating
               </button>
             </motion.div>
           )}

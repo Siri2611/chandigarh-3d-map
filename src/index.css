@@ -173,9 +173,10 @@ h3 { font-size: 1.5rem; }
     top: auto;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: -100px; /* Offset below viewport for elastic buffer */
     width: 100%;
-    height: 50vh; /* Fixed half-screen height on mobile */
+    height: calc(50dvh + 100px); /* Fill standard frame height plus buffer offset */
+    padding-bottom: 100px; /* Push internal content upward safely */
     border-radius: 24px 24px 0 0; /* Bottom sheet style rounded corners */
     border-bottom: none;
     box-shadow: 0 -8px 32px 0 rgba(0, 0, 0, 0.4);

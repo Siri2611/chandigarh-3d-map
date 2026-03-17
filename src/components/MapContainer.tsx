@@ -5,7 +5,7 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { MapPin, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { BurgerReview, Verdict } from '../App';
+import type { Restaurant } from '../App';
 
 const INITIAL_VIEW_STATE = {
   longitude: 76.7794,
@@ -16,10 +16,10 @@ const INITIAL_VIEW_STATE = {
 };
 
 interface MapContainerProps {
-  reviews: BurgerReview[];
+  restaurants: Restaurant[];
   onMapClick: (longitude: number, latitude: number) => void;
-  selectedReviewId: string | null;
-  onSelectReview: (id: string | null) => void;
+  selectedRestaurantId: string | null;
+  onSelectRestaurant: (id: string | null) => void;
   draftLocation: { longitude: number; latitude: number } | null;
   isAdmin: boolean;
 }
@@ -60,20 +60,17 @@ const buildingLayer: LayerProps = {
   }
 };
 
-const getVerdictColor = (verdict: Verdict) => {
-  switch (verdict) {
-    case 'Eat Again': return '#22c55e'; // Green
-    case 'Try Once': return '#eab308'; // Yellow
-    case 'Avoid': return '#ef4444'; // Red
-    default: return '#f97316';
-  }
+const getRatingColor = (rating: number) => {
+  if (rating >= 4) return '#22c55e';   // Green
+  if (rating >= 2.5) return '#eab308'; // Yellow
+  return '#ef4444';                     // Red
 };
 
 export function MapContainer({ 
-  reviews, 
+  restaurants, 
   onMapClick, 
-  selectedReviewId, 
-  onSelectReview, 
+  selectedRestaurantId, 
+  onSelectRestaurant, 
   draftLocation,
   isAdmin
 }: MapContainerProps) {
@@ -81,7 +78,6 @@ export function MapContainer({
   const mapStyleUrl = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
   const handleMapClick = useCallback((e: any) => {
-    // Only block if clicking explicitly inside a marker element
     const target = e.originalEvent?.target as HTMLElement;
     if (target && target.closest('.custom-marker')) {
       return;
@@ -93,15 +89,14 @@ export function MapContainer({
   }, [onMapClick]);
 
   useEffect(() => {
-    // Detect if we're on mobile to apply a larger bottom padding
     const isMobile = window.innerWidth <= 768;
     const paddingOffset = isMobile ? { bottom: window.innerHeight * 0.4 } : { left: 360 };
 
-    if (selectedReviewId && mapRef.current) {
-      const review = reviews.find(r => r.id === selectedReviewId);
-      if (review) {
+    if (selectedRestaurantId && mapRef.current) {
+      const restaurant = restaurants.find(r => r.id === selectedRestaurantId);
+      if (restaurant) {
         mapRef.current.flyTo({
-          center: [review.longitude, review.latitude],
+          center: [restaurant.longitude, restaurant.latitude],
           zoom: 15,
           pitch: 65,
           padding: paddingOffset,
@@ -118,7 +113,7 @@ export function MapContainer({
         essential: true
       });
     }
-  }, [selectedReviewId, draftLocation, reviews]);
+  }, [selectedRestaurantId, draftLocation, restaurants]);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>
@@ -137,20 +132,19 @@ export function MapContainer({
         </Source>
 
         <AnimatePresence>
-          {/* Render Saved Reviews */}
-          {reviews.map((review) => {
-            const isSelected = selectedReviewId === review.id;
-            const color = getVerdictColor(review.verdict);
+          {restaurants.map((restaurant) => {
+            const isSelected = selectedRestaurantId === restaurant.id;
+            const color = getRatingColor(restaurant.overall_rating);
             
             return (
               <Marker 
-                key={review.id} 
-                longitude={review.longitude} 
-                latitude={review.latitude}
+                key={restaurant.id} 
+                longitude={restaurant.longitude} 
+                latitude={restaurant.latitude}
                 anchor="bottom"
                 onClick={(e) => {
                   e.originalEvent.stopPropagation();
-                  onSelectReview(review.id);
+                  onSelectRestaurant(restaurant.id);
                 }}
               >
                 <motion.div
@@ -181,9 +175,11 @@ export function MapContainer({
                       gap: '6px'
                     }}
                   >
-                    <span>{review.restaurantName}</span>
+                    <span>{restaurant.name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '2px', background: 'rgba(255,165,0,0.1)', padding: '2px 6px', borderRadius: '12px' }}>
-                      <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>{review.overall}</span>
+                      <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>
+                        {restaurant.overall_rating > 0 ? restaurant.overall_rating.toFixed(1) : '—'}
+                      </span>
                       <Star size={12} fill="var(--accent-primary)" color="var(--accent-primary)" />
                     </div>
                   </div>
@@ -191,11 +187,10 @@ export function MapContainer({
                     position: 'relative',
                     width: '44px',
                     height: '54px',
-                    filter: `drop-shadow(0 4px 6px ${color}60)`, // Soft glow based on verdict
+                    filter: `drop-shadow(0 4px 6px ${color}60)`,
                     zIndex: isSelected ? 10 : 1,
                     transformOrigin: 'bottom center',
                   }}>
-                    {/* The Teardrop Background PIN Shape */}
                     <svg width="44" height="54" viewBox="0 0 44 54" style={{ position: 'absolute', top: 0, left: 0 }}>
                       <path 
                         d="M22,2 C10.95,2 2,10.95 2,22 C2,34 22,52 22,52 C22,52 42,34 42,22 C42,10.95 33.05,2 22,2 Z" 
@@ -205,7 +200,6 @@ export function MapContainer({
                       />
                     </svg>
 
-                    {/* Inner Circle displaying the Image or Fallback MapPin */}
                     <div style={{
                       position: 'absolute',
                       top: '6px',
@@ -220,10 +214,10 @@ export function MapContainer({
                       justifyContent: 'center',
                       boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
                     }}>
-                      {review.logoUrl ? (
+                      {restaurant.image_url ? (
                         <img 
-                          src={review.logoUrl} 
-                          alt={review.restaurantName}
+                          src={restaurant.image_url} 
+                          alt={restaurant.name}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         />
                       ) : (
@@ -236,7 +230,7 @@ export function MapContainer({
             )
           })}
 
-          {/* Render Draft Marker (Admin Only) */}
+          {/* Draft Marker (Admin Only) */}
           {isAdmin && draftLocation && (
             <Marker 
               key="draft"
@@ -258,7 +252,7 @@ export function MapContainer({
                 <div className="glass-panel text-xs font-semibold" style={{
                   padding: '4px 8px', marginBottom: '8px', color: 'var(--accent-primary)'
                 }}>
-                  Drafting Review...
+                  New Restaurant...
                 </div>
                 <motion.div 
                   animate={{ y: [0, -10, 0] }}
