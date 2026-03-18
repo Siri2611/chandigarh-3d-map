@@ -99,9 +99,9 @@ export function BurgerScorecard({
               src="/logo.png" 
               alt="Burger.Theory Logo" 
               style={{ 
-                height: '72px', // Scaled up logo
+                height: '56px', // Scaled down slightly to fit
                 objectFit: 'contain',
-                filter: 'drop-shadow(0 0 15px rgba(255, 122, 0, 0.35))' 
+                filter: 'drop-shadow(0 0 10px rgba(255, 122, 0, 0.35))' 
               }} 
             />
 
@@ -109,7 +109,7 @@ export function BurgerScorecard({
             <div style={{ textAlign: 'center' }}>
               <h1 style={{ 
                 margin: 0, 
-                fontSize: '1.1rem', 
+                fontSize: '0.95rem', 
                 letterSpacing: '3px', 
                 fontWeight: 800, 
                 color: '#FF7A00',
@@ -125,13 +125,14 @@ export function BurgerScorecard({
 
           {/* Parameters List - Single Column */}
           <div style={{ 
-            flex: '0 0 auto', 
-            padding: '12px 24px',
+            flex: '1 1 auto', 
+            padding: '4px 16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
+            gap: '6px',
             width: '100%',
-            maxWidth: '500px'
+            maxWidth: '480px',
+            justifyContent: 'center'
           }}>
             {Object.entries(PARAM_LABELS).map(([key, label]) => {
               const IconComponent = PARAM_ICONS[key as RatingParam] || Star;
@@ -145,25 +146,25 @@ export function BurgerScorecard({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '12px 18px',
+                    padding: '6px 14px',
                     background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
-                    borderRadius: '10px',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    borderRadius: '8px',
                     transition: 'background 0.2s',
                     height: 'fit-content'
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
                     <div style={{ 
                       color: '#3ABEFF', 
                       display: 'flex', 
                       alignItems: 'center',
                       flexShrink: 0
                     }}>
-                      <IconComponent size={20} />
+                      <IconComponent size={16} />
                     </div>
                     <span style={{ 
-                      fontSize: '0.9rem', 
+                      fontSize: '0.8rem', 
                       fontWeight: 500, 
                       color: 'rgba(255,255,255,0.9)',
                       whiteSpace: 'nowrap',
@@ -174,27 +175,27 @@ export function BurgerScorecard({
                     </span>
                   </div>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0, marginLeft: '8px' }}>
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, marginLeft: '6px' }}>
+                    <div style={{ display: 'flex', gap: '2px' }}>
                       {[1, 2, 3, 4, 5].map((star) => {
                         const fill = val >= star ? '#FF7A00' : 'transparent';
                         const stroke = val >= star ? '#FF7A00' : 'rgba(255,255,255,0.15)';
                         return (
                           <Star 
                             key={star} 
-                            size={16} 
+                            size={12} 
                             fill={fill} 
                             color={stroke} 
-                            style={{ filter: val >= star ? 'drop-shadow(0 0 3px rgba(255, 122, 0, 0.4))' : 'none' }}
+                            style={{ filter: val >= star ? 'drop-shadow(0 0 2px rgba(255, 122, 0, 0.4))' : 'none' }}
                           />
                         );
                       })}
                     </div>
                     <span style={{ 
-                      fontSize: '1.05rem', 
+                      fontSize: '0.95rem', 
                       fontWeight: 700, 
                       color: '#FF7A00',
-                      width: '32px',
+                      width: '26px',
                       textAlign: 'right'
                     }}>
                       {formatRating(val)}
@@ -205,20 +206,19 @@ export function BurgerScorecard({
             })}
           </div>
 
-          {/* Bottom Overall Rating */}
           <div style={{
-            padding: '12px 16px 24px',
+            padding: '8px 16px 16px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             width: '100%',
             maxWidth: '500px'
           }}>
-            <span style={{ fontSize: '0.9rem', letterSpacing: '3px', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>
+            <span style={{ fontSize: '0.8rem', letterSpacing: '3px', color: 'rgba(255,255,255,0.6)', fontWeight: 700 }}>
               OVERALL RATING
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '6px' }}>
                 {[1, 2, 3, 4, 5].map((star) => {
                   const fill = overallRating >= star ? '#FF7A00' : 'transparent';
@@ -226,10 +226,10 @@ export function BurgerScorecard({
                   return (
                     <Star 
                       key={star} 
-                      size={36} 
+                      size={28} 
                       fill={fill} 
                       color={stroke} 
-                      style={{ filter: overallRating >= star ? 'drop-shadow(0 0 8px rgba(255, 122, 0, 0.6))' : 'none' }}
+                      style={{ filter: overallRating >= star ? 'drop-shadow(0 0 6px rgba(255, 122, 0, 0.5))' : 'none' }}
                     />
                   );
                 })}
