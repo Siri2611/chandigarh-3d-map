@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChefHat, Droplets, Circle, Square, Box, DollarSign, ShieldCheck, Eye, Zap, X, Star } from 'lucide-react';
 import type { RatingParam } from '../App';
-import { parseBurgers } from '../App';
 import { PARAM_LABELS } from '../App';
 
 const PARAM_ICONS: Record<RatingParam, React.ComponentType<any>> = {
@@ -119,11 +118,7 @@ export function BurgerScorecard({
                 BURGER SCORECARD
               </h1>
               <p style={{ margin: '1px 0 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
-                {restaurantName} {(() => {
-                  const menuItems = parseBurgers(burgerName);
-                  if (menuItems.length === 0) return '';
-                  return `• ${menuItems[0].name}${menuItems.length > 1 ? ` (+${menuItems.length - 1})` : ''}`;
-                })()}
+                {restaurantName}
               </p>
             </div>
           </div>

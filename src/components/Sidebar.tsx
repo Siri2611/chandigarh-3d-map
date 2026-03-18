@@ -338,18 +338,7 @@ export function Sidebar({
                         )}
                         <div>
                           <h3 className="text-sm font-semibold" style={{ margin: 0 }}>{restaurant.name}</h3>
-                          {(() => {
-                            const parsed = parseBurgers(restaurant.burger_name);
-                            if (parsed.length === 0) return null;
-                            return (
-                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', opacity: 0.8, marginTop: '2px' }}>
-                                <DietIcon isVeg={parsed[0].isVeg} size={10} />
-                                <p className="text-xs text-muted" style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
-                                  {parsed[0].name}{parsed.length > 1 ? ` (+${parsed.length - 1})` : ''}
-                                </p>
-                              </div>
-                            );
-                          })()}
+                          {/* Burger name display removed */}
                         </div>
                       </div>
                       <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
@@ -428,7 +417,7 @@ export function Sidebar({
                     borderRadius: 'var(--border-radius-md)', border: '1px solid var(--glass-border)' 
                   }}>
                     <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)', margin: 0 }}>
-                      Burgers Menu
+                      Burger's Reviewed
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {menuItems.map((item, idx) => (
