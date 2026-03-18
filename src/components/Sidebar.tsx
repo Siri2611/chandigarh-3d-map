@@ -83,7 +83,7 @@ export function Sidebar({
 
   // Mobile collapsed state logic
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
-  const [isMobileScrolled, setIsMobileScrolled] = useState(false);
+  const [scrollOffset, setScrollOffset] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const dragControls = useDragControls();
 
@@ -95,16 +95,14 @@ export function Sidebar({
   }, []);
 
   useEffect(() => {
-    if (!isMobileExpanded && isMobileScrolled) {
-      setIsMobileScrolled(false);
+    if (!isMobileExpanded && scrollOffset > 0) {
+      setScrollOffset(0);
     }
-  }, [isMobileExpanded, isMobileScrolled]);
+  }, [isMobileExpanded, scrollOffset]);
 
   useEffect(() => {
     if (mode !== 'list') {
       setIsMobileExpanded(true);
-    } else {
-      setIsMobileExpanded(false);
     }
   }, [mode]);
 
@@ -162,13 +160,18 @@ export function Sidebar({
       animate={{ 
         x: 0, 
         opacity: 1, 
-        y: isMobile 
+        height: isMobile 
           ? (isMobileExpanded 
-              ? (isMobileScrolled ? 0 : 'calc(35dvh)') 
-              : 'calc(85dvh - 72px)') 
-          : 0
+              ? `calc(min(85dvh + 100px, 50dvh + 100px + ${scrollOffset * 2}px))` 
+              : '172px') 
+          : '100%',
+        y: 0 
       }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      transition={
+        scrollOffset > 0 && isMobileExpanded
+          ? { type: false, duration: 0 } 
+          : { type: "spring", stiffness: 300, damping: 25 }
+      }
       drag={isMobile ? "y" : false}
       dragControls={dragControls}
       dragListener={false}
@@ -185,7 +188,8 @@ export function Sidebar({
         zIndex: 10,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        minHeight: isMobile ? '172px' : 'auto'
       }}
     >
       {/* Mobile Pull Handle */}
@@ -240,11 +244,20 @@ export function Sidebar({
         style={{ flex: 1, overflowY: 'auto', padding: '24px' }}
         onScroll={(e) => {
           if (!isMobile || !isMobileExpanded) return;
+          
           const target = e.currentTarget;
-          if (target.scrollTop > 10 && !isMobileScrolled) {
-            setIsMobileScrolled(true);
-          } else if (target.scrollTop <= 10 && isMobileScrolled) {
-            setIsMobileScrolled(false);
+          const maxScroll = Math.max(0, target.scrollHeight - target.clientHeight);
+          // Strictly clamp the scroll value to ignore iOS/Android elastic overscroll (rubber-banding)
+          const validScroll = Math.max(0, Math.min(target.scrollTop, maxScroll));
+          
+          // Stop hammering React with state updates once we've reached the mathematical expansion cap.
+          if (validScroll <= 300) {
+            // Only update if the value actually changed to prevent micro-renders during the bounce
+            if (scrollOffset !== validScroll) {
+              setScrollOffset(validScroll);
+            }
+          } else if (scrollOffset !== 300) {
+            setScrollOffset(300);
           }
         }}
       >
