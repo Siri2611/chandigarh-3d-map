@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChefHat, Droplets, Circle, Square, Box, DollarSign, ShieldCheck, Eye, Zap, X, Star } from 'lucide-react';
 import type { RatingParam } from '../App';
@@ -36,8 +37,10 @@ export function BurgerScorecard({
 }: BurgerScorecardProps) {
 
   const formatRating = (val: number) => (val > 0 ? val.toFixed(1) : '—');
+  
+  if (typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
@@ -243,6 +246,7 @@ export function BurgerScorecard({
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
