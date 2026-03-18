@@ -61,6 +61,60 @@ export interface Restaurant {
   param_averages: Record<RatingParam, number>;
 }
 
+export interface MenuItem {
+  name: string;
+  isVeg: boolean;
+}
+
+export const parseBurgers = (burgerNameStr: string | null | undefined): MenuItem[] => {
+  if (!burgerNameStr) return [];
+  try {
+    const parsed = JSON.parse(burgerNameStr);
+    if (Array.isArray(parsed)) return parsed as MenuItem[];
+    return [];
+  } catch (e) {
+    return [{ name: burgerNameStr, isVeg: false }];
+  }
+};
+
+export const DietIcon = ({ isVeg, size = 16 }: { isVeg: boolean; size?: number }) => {
+  const color = isVeg ? '#008539' : '#D8232A'; // FSSAI Green and Red
+  const padding = size * 0.15;
+  const innerSize = size - padding * 2;
+  
+  return (
+    <div style={{
+      width: `${size}px`,
+      height: `${size}px`,
+      border: `2px solid ${color}`,
+      backgroundColor: 'white', // Ensure visibility on dark background
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: '2px',
+      flexShrink: 0
+    }}>
+      {isVeg ? (
+        <div style={{
+          width: `${innerSize}px`,
+          height: `${innerSize}px`,
+          backgroundColor: color,
+          borderRadius: '50%'
+        }} />
+      ) : (
+        <div style={{
+          width: 0,
+          height: 0,
+          borderLeft: `${innerSize / 2}px solid transparent`,
+          borderRight: `${innerSize / 2}px solid transparent`,
+          borderBottom: `${innerSize * 0.866}px solid ${color}`, // equilateral triangle height approximation
+          transform: 'translateY(-1px)' // visual center
+        }} />
+      )}
+    </div>
+  );
+};
+
 export type SidebarMode = 'list' | 'add' | 'detail' | 'add-reviewer';
 
 // ─── Utility: compute averages from ratings array ───
@@ -182,12 +236,12 @@ function App() {
   }, []);
 
   // ─── Create Restaurant ───
-  const handleCreateRestaurant = useCallback(async (data: { name: string; burger_name?: string; image_url?: string; location_url?: string }) => {
+  const handleCreateRestaurant = useCallback(async (data: { name: string; burgers?: MenuItem[]; image_url?: string; location_url?: string }) => {
     if (!draftLocation || !supabase) return;
     
     const newRestaurant = {
       name: data.name,
-      burger_name: data.burger_name || null,
+      burger_name: data.burgers && data.burgers.length > 0 ? JSON.stringify(data.burgers) : null,
       latitude: draftLocation.latitude,
       longitude: draftLocation.longitude,
       image_url: data.image_url || null,

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { Navigation, Trash2, ArrowLeft, Star, Plus, ExternalLink, UserPlus, Users, ChevronUp } from 'lucide-react';
-import type { Restaurant, ReviewerRating, SidebarMode, RatingParam } from '../App';
-import { RATING_PARAMS, PARAM_LABELS } from '../App';
+import type { Restaurant, ReviewerRating, SidebarMode, RatingParam, MenuItem } from '../App';
+import { RATING_PARAMS, PARAM_LABELS, DietIcon, parseBurgers } from '../App';
 import { BurgerScorecard } from './BurgerScorecard';
 
 interface SidebarProps {
@@ -12,7 +12,7 @@ interface SidebarProps {
   selectedRestaurantId: string | null;
   onSelectRestaurant: (id: string | null) => void;
   onDeleteRestaurant: (id: string) => void;
-  onCreateRestaurant: (data: { name: string; burger_name?: string; image_url?: string; location_url?: string }) => void;
+  onCreateRestaurant: (data: { name: string; burgers?: MenuItem[]; image_url?: string; location_url?: string }) => void;
   onAddReviewerRating: (restaurantId: string, data: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => void;
   onUpdateReviewerRating: (ratingId: string, restaurantId: string, data: Omit<ReviewerRating, 'id' | 'restaurant_id' | 'created_at'>) => void;
   onDeleteReviewerRating: (ratingId: string, restaurantId: string) => void;
@@ -61,7 +61,7 @@ export function Sidebar({
   
   // ─── Create Restaurant Form State ───
   const [restaurantName, setRestaurantName] = useState('');
-  const [burgerName, setBurgerName] = useState('');
+  const [burgers, setBurgers] = useState<MenuItem[]>([{ name: '', isVeg: false }]);
   const [imageUrl, setImageUrl] = useState('');
   const [locationUrl, setLocationUrl] = useState('');
 
@@ -108,14 +108,15 @@ export function Sidebar({
 
   const handleCreateRestaurant = () => {
     if (!restaurantName.trim()) return;
+    const validBurgers = burgers.filter(b => b.name.trim() !== '');
     onCreateRestaurant({
       name: restaurantName.trim(),
-      burger_name: burgerName.trim() || undefined,
+      burgers: validBurgers.length > 0 ? validBurgers : undefined,
       image_url: imageUrl.trim() || undefined,
       location_url: locationUrl.trim() || undefined,
     });
     setRestaurantName('');
-    setBurgerName('');
+    setBurgers([{ name: '', isVeg: false }]);
     setImageUrl('');
     setLocationUrl('');
   };
@@ -152,12 +153,9 @@ export function Sidebar({
     }
     return 0;
   });
-
-  // ─── Animation Height Calculator ───
+  // ─── Animation Viewport Metrics ───
   const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-  const baseHeight = (vh * 0.5) + 100;
-  const maxHeight = (vh * 0.85) + 100;
-  const expandedHeight = Math.min(maxHeight, baseHeight + scrollOffset);
+  const halfOpenOffset = vh * 0.35; // The amount of Y distance to hide to make 85dvh look like 50dvh
 
   return (
     <motion.div 
@@ -166,12 +164,11 @@ export function Sidebar({
       animate={{ 
         x: 0, 
         opacity: 1, 
-        height: isMobile 
+        y: isMobile 
           ? (isMobileExpanded 
-              ? `${expandedHeight}px` 
-              : '172px') 
-          : '100%',
-        y: 0 
+              ? Math.max(0, halfOpenOffset - scrollOffset) 
+              : vh * 0.85 - 72) 
+          : 0
       }}
       transition={
         scrollOffset > 0 && isMobileExpanded
@@ -194,8 +191,7 @@ export function Sidebar({
         zIndex: 10,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden',
-        minHeight: isMobile ? '172px' : 'auto'
+        overflow: 'hidden'
       }}
     >
       {/* Mobile Pull Handle */}
@@ -247,23 +243,21 @@ export function Sidebar({
 
       <div 
         className="sidebar-content-scroll" 
-        style={{ flex: 1, overflowY: 'auto', padding: '24px' }}
+        style={{ flex: 1, overflowY: 'auto', padding: '24px', paddingBottom: isMobile ? '35vh' : '24px' }}
         onScroll={(e) => {
           if (!isMobile || !isMobileExpanded) return;
           
           const target = e.currentTarget;
           const maxScroll = Math.max(0, target.scrollHeight - target.clientHeight);
-          // Strictly clamp the scroll value to ignore iOS/Android elastic overscroll (rubber-banding)
-          const validScroll = Math.max(0, Math.min(target.scrollTop, maxScroll));
+          // Round to prevent sub-pixel micro renders, and strictly clamp 
+          const validScroll = Math.round(Math.max(0, Math.min(target.scrollTop, maxScroll)));
           
-          // Stop hammering React with state updates once we've reached the mathematical expansion cap.
-          if (validScroll <= 300) {
-            // Only update if the value actually changed to prevent micro-renders during the bounce
+          if (validScroll <= halfOpenOffset) {
             if (scrollOffset !== validScroll) {
               setScrollOffset(validScroll);
             }
-          } else if (scrollOffset !== 300) {
-            setScrollOffset(300);
+          } else if (scrollOffset !== halfOpenOffset) {
+            setScrollOffset(halfOpenOffset);
           }
         }}
       >
@@ -344,7 +338,18 @@ export function Sidebar({
                         )}
                         <div>
                           <h3 className="text-sm font-semibold" style={{ margin: 0 }}>{restaurant.name}</h3>
-                          {restaurant.burger_name && <p className="text-xs text-muted" style={{ margin: 0, opacity: 0.7 }}>{restaurant.burger_name}</p>}
+                          {(() => {
+                            const parsed = parseBurgers(restaurant.burger_name);
+                            if (parsed.length === 0) return null;
+                            return (
+                              <div style={{ display: 'flex', gap: '6px', alignItems: 'center', opacity: 0.8, marginTop: '2px' }}>
+                                <DietIcon isVeg={parsed[0].isVeg} size={10} />
+                                <p className="text-xs text-muted" style={{ margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }}>
+                                  {parsed[0].name}{parsed.length > 1 ? ` (+${parsed.length - 1})` : ''}
+                                </p>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                       <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
@@ -387,11 +392,7 @@ export function Sidebar({
                       <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.3rem', lineHeight: 1.2 }}>
                         {selectedRestaurant.name}
                       </h2>
-                      {selectedRestaurant.burger_name && (
-                        <p className="text-xs text-muted" style={{ margin: 0, marginTop: '-2px' }}>
-                          {selectedRestaurant.burger_name}
-                        </p>
-                      )}
+                      {/* Single burger header layout removed in favor of Menu layout below */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <StarRating value={selectedRestaurant.overall_rating} />
                         <span className="text-xs font-bold" style={{ color: 'var(--accent-primary)' }}>
@@ -415,6 +416,31 @@ export function Sidebar({
                   </div>
                 </div>
               </div>
+
+              {/* Burgers Menu Section */}
+              {(() => {
+                const menuItems = parseBurgers(selectedRestaurant.burger_name);
+                if (menuItems.length === 0) return null;
+                return (
+                  <div style={{ 
+                    display: 'flex', flexDirection: 'column', gap: '8px', 
+                    background: 'rgba(255,255,255,0.02)', padding: '12px 16px', 
+                    borderRadius: 'var(--border-radius-md)', border: '1px solid var(--glass-border)' 
+                  }}>
+                    <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-secondary)', margin: 0 }}>
+                      Burgers Menu
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {menuItems.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <DietIcon isVeg={item.isVeg} size={12} />
+                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* 10 Parameter Averages Grid */}
               {selectedRestaurant.ratings.length > 0 && (
@@ -675,13 +701,81 @@ export function Sidebar({
                   onChange={e => setRestaurantName(e.target.value)}
                   style={inputStyle}
                 />
-                <input 
-                  type="text" 
-                  placeholder="Burger Name *" 
-                  value={burgerName}
-                  onChange={e => setBurgerName(e.target.value)}
-                  style={inputStyle}
-                />
+                {burgers.map((burger, index) => (
+                  <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ flex: 1, position: 'relative' }}>
+                      <input 
+                        type="text" 
+                        placeholder={`Burger Name ${index + 1} *`}
+                        value={burger.name}
+                        onChange={e => {
+                          const newBurgers = [...burgers];
+                          newBurgers[index] = { ...newBurgers[index], name: e.target.value };
+                          setBurgers(newBurgers);
+                        }}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newBurgers = [...burgers];
+                        newBurgers[index] = { ...newBurgers[index], isVeg: !newBurgers[index].isVeg };
+                        setBurgers(newBurgers);
+                      }}
+                      style={{
+                        background: 'rgba(0,0,0,0.2)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: 'var(--border-radius-sm)',
+                        padding: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                      title={burger.isVeg ? 'Veg' : 'Non-Veg'}
+                    >
+                      <DietIcon isVeg={burger.isVeg} size={14} />
+                    </button>
+                    {burgers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setBurgers(burgers.filter((_, i) => i !== index))}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'rgba(239, 68, 68, 0.7)',
+                          cursor: 'pointer',
+                          padding: '4px'
+                        }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => setBurgers([...burgers, { name: '', isVeg: false }])}
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px dashed rgba(255,255,255,0.15)',
+                    borderRadius: 'var(--border-radius-sm)',
+                    padding: '10px',
+                    color: 'var(--text-secondary)',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    marginTop: '-4px'
+                  }}
+                >
+                  <Plus size={14} /> Add a burger
+                </button>
                 <input
                   type="text"
                   placeholder="Restaurant Image URL (Optional)"

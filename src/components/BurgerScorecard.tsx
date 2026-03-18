@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChefHat, Droplets, Circle, Square, Box, DollarSign, ShieldCheck, Eye, Zap, X, Star } from 'lucide-react';
 import type { RatingParam } from '../App';
+import { DietIcon, parseBurgers } from '../App';
 import { PARAM_LABELS } from '../App';
 
 const PARAM_ICONS: Record<RatingParam, React.ComponentType<any>> = {
@@ -117,9 +118,25 @@ export function BurgerScorecard({
               }}>
                 BURGER SCORECARD
               </h1>
-              <p style={{ margin: '1px 0 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
-                {restaurantName} {burgerName ? `• ${burgerName}` : ''}
-              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                <p style={{ margin: 0, fontSize: '1rem', color: 'white', fontWeight: 700 }}>
+                  {restaurantName}
+                </p>
+                {(() => {
+                  const menuItems = parseBurgers(burgerName);
+                  if (menuItems.length === 0) return null;
+                  return (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '6px', opacity: 0.95 }}>
+                      {menuItems.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                          <DietIcon isVeg={item.isVeg} size={10} />
+                          <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.9)', fontWeight: 500, letterSpacing: '0.2px' }}>{item.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
 
