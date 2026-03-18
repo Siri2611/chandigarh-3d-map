@@ -99,7 +99,7 @@ export function BurgerScorecard({
               src="/logo.png" 
               alt="Burger.Theory Logo" 
               style={{ 
-                height: '56px', // Scaled down slightly to fit
+                height: '72px', 
                 objectFit: 'contain',
                 filter: 'drop-shadow(0 0 10px rgba(255, 122, 0, 0.35))' 
               }} 
@@ -125,14 +125,13 @@ export function BurgerScorecard({
 
           {/* Parameters List - Single Column */}
           <div style={{ 
-            flex: '1 1 auto', 
-            padding: '4px 16px',
+            flex: '0 0 auto', 
+            padding: '12px 16px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '6px',
+            gap: '8px',
             width: '100%',
-            maxWidth: '480px',
-            justifyContent: 'center'
+            maxWidth: '400px'
           }}>
             {Object.entries(PARAM_LABELS).map(([key, label]) => {
               const IconComponent = PARAM_ICONS[key as RatingParam] || Star;
