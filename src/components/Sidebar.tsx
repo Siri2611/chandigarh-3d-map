@@ -238,8 +238,10 @@ export function Sidebar({
               </div>
 
               {/* Sorting Pills */}
-              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
-                {(['overall', 'juiciness', 'size_price_ratio'] as const).map(option => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sort by:</span>
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+                  {(['overall', 'size_price_ratio', 'juiciness'] as const).map(option => (
                   <button
                     key={option}
                     onClick={() => setSortBy(option)}
@@ -261,6 +263,7 @@ export function Sidebar({
                     {option === 'size_price_ratio' ? 'Value (Size/Price)' : option === 'overall' ? 'Overall Rating' : option}
                   </button>
                 ))}
+                </div>
               </div>
 
               {sortedRestaurants.length === 0 ? (
