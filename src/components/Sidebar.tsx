@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'framer-motion';
-import { Navigation, Trash2, ArrowLeft, Star, Plus, ExternalLink, UserPlus, Users } from 'lucide-react';
+import { Navigation, Trash2, ArrowLeft, Star, Plus, ExternalLink, UserPlus, Users, ChevronUp } from 'lucide-react';
 import type { Restaurant, ReviewerRating, SidebarMode, RatingParam } from '../App';
 import { RATING_PARAMS, PARAM_LABELS } from '../App';
 import { BurgerScorecard } from './BurgerScorecard';
@@ -83,6 +83,7 @@ export function Sidebar({
 
   // Mobile collapsed state logic
   const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+  const [isMobileScrolled, setIsMobileScrolled] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const dragControls = useDragControls();
 
@@ -92,6 +93,12 @@ export function Sidebar({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    if (!isMobileExpanded && isMobileScrolled) {
+      setIsMobileScrolled(false);
+    }
+  }, [isMobileExpanded, isMobileScrolled]);
 
   useEffect(() => {
     if (mode !== 'list') {
@@ -156,10 +163,12 @@ export function Sidebar({
         x: 0, 
         opacity: 1, 
         y: isMobile 
-          ? (isMobileExpanded ? 0 : 'calc(50dvh - 60px)') 
+          ? (isMobileExpanded 
+              ? (isMobileScrolled ? 0 : 'calc(35dvh)') 
+              : 'calc(85dvh - 72px)') 
           : 0
       }}
-      transition={{ type: "spring", stiffness: 200, damping: 25, delay: 0.2 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
       drag={isMobile ? "y" : false}
       dragControls={dragControls}
       dragListener={false}
@@ -187,9 +196,19 @@ export function Sidebar({
           e.stopPropagation();
           setIsMobileExpanded(prev => !prev);
         }}
-        style={{ cursor: 'grab', touchAction: 'none' }}
+        style={{ cursor: 'pointer', touchAction: 'none', flexDirection: 'column', alignItems: 'center' }}
       >
-        <div className="pull-tab-handle" />
+        <motion.div
+           animate={{ rotate: isMobileExpanded ? 180 : 0 }}
+           transition={{ type: "spring", stiffness: 300, damping: 20 }}
+           style={{ display: 'flex' }}
+        >
+          <ChevronUp 
+            size={32} 
+            color="#FF7A00" 
+            style={{ filter: 'drop-shadow(0 0 8px rgba(255, 122, 0, 0.6))' }} 
+          />
+        </motion.div>
       </div>
 
       {/* Dynamic Header */}
@@ -216,7 +235,19 @@ export function Sidebar({
         </div>
       )}
 
-      <div className="sidebar-content-scroll" style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+      <div 
+        className="sidebar-content-scroll" 
+        style={{ flex: 1, overflowY: 'auto', padding: '24px' }}
+        onScroll={(e) => {
+          if (!isMobile || !isMobileExpanded) return;
+          const target = e.currentTarget;
+          if (target.scrollTop > 10 && !isMobileScrolled) {
+            setIsMobileScrolled(true);
+          } else if (target.scrollTop <= 10 && isMobileScrolled) {
+            setIsMobileScrolled(false);
+          }
+        }}
+      >
         <AnimatePresence mode="wait">
           
           {/* ═══════════ LIST VIEW ═══════════ */}
