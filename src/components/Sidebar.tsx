@@ -663,7 +663,6 @@ export function Sidebar({
                 onClose={() => setShowScorecard(false)}
                 ratings={selectedRestaurant.param_averages}
                 overallRating={selectedRestaurant.overall_rating}
-                burgerName={selectedRestaurant.burger_name}
                 restaurantName={selectedRestaurant.name}
               />
             </motion.div>

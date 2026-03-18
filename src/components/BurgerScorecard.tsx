@@ -23,7 +23,6 @@ interface BurgerScorecardProps {
   onClose: () => void;
   ratings: Record<RatingParam, number>;
   overallRating: number;
-  burgerName?: string;
   restaurantName: string;
 }
 
@@ -32,7 +31,6 @@ export function BurgerScorecard({
   onClose, 
   ratings, 
   overallRating, 
-  burgerName, 
   restaurantName 
 }: BurgerScorecardProps) {
 
