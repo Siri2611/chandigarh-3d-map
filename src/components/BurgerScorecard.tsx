@@ -99,7 +99,7 @@ export function BurgerScorecard({
               src="/logo.png" 
               alt="Burger.Theory Logo" 
               style={{ 
-                height: '72px', 
+                height: '96px', 
                 objectFit: 'contain',
                 filter: 'drop-shadow(0 0 10px rgba(255, 122, 0, 0.35))' 
               }} 
@@ -109,7 +109,7 @@ export function BurgerScorecard({
             <div style={{ textAlign: 'center' }}>
               <h1 style={{ 
                 margin: 0, 
-                fontSize: '0.95rem', 
+                fontSize: '1.25rem', 
                 letterSpacing: '3px', 
                 fontWeight: 800, 
                 color: '#FF7A00',
@@ -117,7 +117,7 @@ export function BurgerScorecard({
               }}>
                 BURGER SCORECARD
               </h1>
-              <p style={{ margin: '1px 0 0', fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
+              <p style={{ margin: '1px 0 0', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
                 {restaurantName} {burgerName ? `• ${burgerName}` : ''}
               </p>
             </div>
