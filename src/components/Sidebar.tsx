@@ -72,6 +72,9 @@ export function Sidebar({
   // ─── Scorecard State ───
   const [showScorecard, setShowScorecard] = useState(false);
 
+  // ─── List Sorting State ───
+  const [sortBy, setSortBy] = useState<'overall' | 'juiciness' | 'size_price_ratio'>('overall');
+
   // ─── Add Reviewer Form State ───
   const [reviewerName, setReviewerName] = useState('');
   const [reviewerRatings, setReviewerRatings] = useState<Record<RatingParam, number>>(
@@ -132,6 +135,18 @@ export function Sidebar({
       default: return '';
     }
   })();
+
+  // ─── Sorting Logic ───
+  const sortedRestaurants = [...restaurants].sort((a, b) => {
+    if (sortBy === 'overall') {
+      return b.overall_rating - a.overall_rating;
+    } else if (sortBy === 'juiciness') {
+      return (b.param_averages['juiciness'] || 0) - (a.param_averages['juiciness'] || 0);
+    } else if (sortBy === 'size_price_ratio') {
+      return (b.param_averages['size_price_ratio'] || 0) - (a.param_averages['size_price_ratio'] || 0);
+    }
+    return 0;
+  });
 
   return (
     <motion.div 
@@ -222,13 +237,39 @@ export function Sidebar({
                 </p>
               </div>
 
-              {restaurants.length === 0 ? (
+              {/* Sorting Pills */}
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+                {(['overall', 'juiciness', 'size_price_ratio'] as const).map(option => (
+                  <button
+                    key={option}
+                    onClick={() => setSortBy(option)}
+                    style={{
+                      background: sortBy === option ? 'var(--accent-primary)' : 'rgba(255,255,255,0.05)',
+                      color: sortBy === option ? '#fff' : 'var(--text-secondary)',
+                      border: '1px solid',
+                      borderColor: sortBy === option ? 'var(--accent-primary)' : 'rgba(255,255,255,0.1)',
+                      padding: '6px 12px',
+                      borderRadius: '999px',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s ease',
+                      textTransform: 'capitalize'
+                    }}
+                  >
+                    {option === 'size_price_ratio' ? 'Value (Size/Price)' : option === 'overall' ? 'Overall Rating' : option}
+                  </button>
+                ))}
+              </div>
+
+              {sortedRestaurants.length === 0 ? (
                 <div className="flex-center" style={{ flexDirection: 'column', opacity: 0.5, padding: '40px 0', textAlign: 'center' }}>
                   <Navigation size={40} style={{ marginBottom: '16px' }} />
                   <p className="text-sm">No restaurants mapped yet.<br/>Time to start eating!</p>
                 </div>
               ) : (
-                restaurants.map(restaurant => (
+                sortedRestaurants.map(restaurant => (
                   <motion.div
                     key={restaurant.id}
                     whileHover={{ scale: 1.02 }}
