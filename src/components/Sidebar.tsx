@@ -153,6 +153,12 @@ export function Sidebar({
     return 0;
   });
 
+  // ─── Animation Height Calculator ───
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const baseHeight = (vh * 0.5) + 100;
+  const maxHeight = (vh * 0.85) + 100;
+  const expandedHeight = Math.min(maxHeight, baseHeight + scrollOffset);
+
   return (
     <motion.div 
       className="glass-panel glass-sidebar"
@@ -162,7 +168,7 @@ export function Sidebar({
         opacity: 1, 
         height: isMobile 
           ? (isMobileExpanded 
-              ? `calc(min(85dvh + 100px, 50dvh + 100px + ${scrollOffset * 2}px))` 
+              ? `${expandedHeight}px` 
               : '172px') 
           : '100%',
         y: 0 
@@ -170,7 +176,7 @@ export function Sidebar({
       transition={
         scrollOffset > 0 && isMobileExpanded
           ? { type: false, duration: 0 } 
-          : { type: "spring", stiffness: 300, damping: 25 }
+          : { type: "spring", stiffness: 400, damping: 35 }
       }
       drag={isMobile ? "y" : false}
       dragControls={dragControls}
