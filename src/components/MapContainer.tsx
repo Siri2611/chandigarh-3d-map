@@ -22,6 +22,7 @@ interface MapContainerProps {
   onSelectRestaurant: (id: string | null) => void;
   draftLocation: { longitude: number; latitude: number } | null;
   isAdmin: boolean;
+  centerLocation?: { longitude: number; latitude: number };
 }
 
 const buildingLayer: LayerProps = {
@@ -72,7 +73,8 @@ export function MapContainer({
   selectedRestaurantId, 
   onSelectRestaurant, 
   draftLocation,
-  isAdmin
+  isAdmin,
+  centerLocation
 }: MapContainerProps) {
   const mapRef = React.useRef<MapRef>(null);
   const mapStyleUrl = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
@@ -112,8 +114,15 @@ export function MapContainer({
         duration: 1000,
         essential: true
       });
+    } else if (centerLocation && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [centerLocation.longitude, centerLocation.latitude],
+        zoom: 13.5,
+        duration: 1500,
+        essential: true
+      });
     }
-  }, [selectedRestaurantId, draftLocation, restaurants]);
+  }, [selectedRestaurantId, draftLocation, centerLocation, restaurants]);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}>

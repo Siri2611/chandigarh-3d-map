@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Lock, Unlock } from 'lucide-react';
+import { Lock, Unlock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MapContainer } from './components/MapContainer';
 import { Sidebar } from './components/Sidebar';
@@ -27,6 +27,13 @@ export const PARAM_LABELS: Record<RatingParam, string> = {
   aesthetic_presentation: 'Aesthetic & Presentation',
   service_speed: 'Service Speed',
 };
+
+// ─── Location Thresholds ───
+export const LOCATIONS = [
+  { name: 'Chandigarh', longitude: 76.7794, latitude: 30.7333 },
+  { name: 'Mohali', longitude: 76.7179, latitude: 30.7046 },
+  { name: 'Panchkula', longitude: 76.8485, latitude: 30.6942 } // Nudged longitude Eastward
+];
 
 // ─── Data Types ───
 export interface ReviewerRating {
@@ -141,6 +148,10 @@ function App() {
   
   const [draftLocation, setDraftLocation] = useState<{longitude: number; latitude: number} | null>(null);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>('list');
+  const [currentLocationIdx, setCurrentLocationIdx] = useState(0);
+
+  const handleNextLocation = () => setCurrentLocationIdx(prev => (prev + 1) % LOCATIONS.length);
+  const handlePrevLocation = () => setCurrentLocationIdx(prev => (prev - 1 + LOCATIONS.length) % LOCATIONS.length);
   
   // Admin State
   const [isAdmin, setIsAdmin] = useState(false);
@@ -428,6 +439,13 @@ function App() {
             </div>
           </div>
 
+          {/* Center Location Switcher */}
+          <div className="location-switcher">
+            <button onClick={handlePrevLocation} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><ChevronLeft size={18} /></button>
+            <span style={{ fontStyle: 'normal', fontWeight: 600, fontSize: '0.875rem', letterSpacing: '0.5px', minWidth: '85px', textAlign: 'center' }}>{LOCATIONS[currentLocationIdx].name}</span>
+            <button onClick={handleNextLocation} style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><ChevronRight size={18} /></button>
+          </div>
+
           <button
             onClick={handleAdminToggle}
             style={{
@@ -539,6 +557,7 @@ function App() {
         onSelectRestaurant={handleSelectRestaurant}
         draftLocation={draftLocation}
         isAdmin={isAdmin}
+        centerLocation={LOCATIONS[currentLocationIdx]}
       />
       <Sidebar 
         mode={sidebarMode}

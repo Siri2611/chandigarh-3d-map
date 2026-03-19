@@ -17,3 +17,30 @@
     flex-direction: column;
   }
 }
+
+/* Center Location Switcher absolute block layout */
+.location-switcher {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  color: #0f172a;
+  box-shadow: var(--glass-shadow);
+  top: 24px;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  .location-switcher {
+    top: 85px; /* Pull beneath title on smaller screen breaking overlap */
+  }
+}
