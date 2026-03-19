@@ -423,7 +423,12 @@ export function Sidebar({
                       {menuItems.map((item, idx) => (
                         <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <DietIcon isVeg={item.isVeg} size={12} />
-                          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
+                            {item.price !== undefined && item.price > 0 && (
+                              <span style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', fontWeight: 600 }}>₹{item.price}</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -691,17 +696,39 @@ export function Sidebar({
                 />
                 {burgers.map((burger, index) => (
                   <div key={index} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <div style={{ flex: 1, position: 'relative' }}>
+                    <div style={{ flex: 1, display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ flex: 1, position: 'relative' }}>
+                        <input 
+                          type="text" 
+                          placeholder={`Burger Name ${index + 1} *`}
+                          value={burger.name}
+                          onChange={e => {
+                            const newBurgers = [...burgers];
+                            newBurgers[index] = { ...newBurgers[index], name: e.target.value };
+                            setBurgers(newBurgers);
+                          }}
+                          style={inputStyle}
+                        />
+                      </div>
                       <input 
-                        type="text" 
-                        placeholder={`Burger Name ${index + 1} *`}
-                        value={burger.name}
+                        type="number" 
+                        placeholder="Price (₹)"
+                        value={burger.price || ''}
                         onChange={e => {
                           const newBurgers = [...burgers];
-                          newBurgers[index] = { ...newBurgers[index], name: e.target.value };
+                          newBurgers[index] = { ...newBurgers[index], price: e.target.value ? Number(e.target.value) : undefined };
                           setBurgers(newBurgers);
                         }}
-                        style={inputStyle}
+                        style={{
+                          width: '85px',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid var(--glass-border)',
+                          borderRadius: 'var(--border-radius-sm)',
+                          padding: '12px',
+                          color: 'white',
+                          fontSize: '0.875rem',
+                          outline: 'none'
+                        }}
                       />
                     </div>
                     <button

@@ -71,6 +71,7 @@ export interface Restaurant {
 export interface MenuItem {
   name: string;
   isVeg: boolean;
+  price?: number;
 }
 
 export const parseBurgers = (burgerNameStr: string | null | undefined): MenuItem[] => {
