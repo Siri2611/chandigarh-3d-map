@@ -101,10 +101,10 @@ export function Sidebar({
   }, [isMobileExpanded, scrollOffset]);
 
   useEffect(() => {
-    if (mode !== 'list') {
+    if (mode !== 'list' || selectedRestaurantId) {
       setIsMobileExpanded(true);
     }
-  }, [mode]);
+  }, [mode, selectedRestaurantId]);
 
   const handleCreateRestaurant = () => {
     if (!restaurantName.trim()) return;
