@@ -18,6 +18,7 @@ interface SidebarProps {
   onDeleteReviewerRating: (ratingId: string, restaurantId: string) => void;
   draftLocation: { longitude: number; latitude: number } | null;
   isAdmin: boolean;
+  selectionVersion?: number;
 }
 
 const getRatingColor = (rating: number) => {
@@ -56,7 +57,8 @@ export function Sidebar({
   onUpdateReviewerRating,
   onDeleteReviewerRating,
   draftLocation,
-  isAdmin
+  isAdmin,
+  selectionVersion
 }: SidebarProps) {
   
   // ─── Create Restaurant Form State ───
@@ -104,7 +106,7 @@ export function Sidebar({
     if (mode !== 'list' || selectedRestaurantId) {
       setIsMobileExpanded(true);
     }
-  }, [mode, selectedRestaurantId]);
+  }, [mode, selectedRestaurantId, selectionVersion]);
 
   const handleCreateRestaurant = () => {
     if (!restaurantName.trim()) return;

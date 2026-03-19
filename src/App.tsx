@@ -150,9 +150,19 @@ function App() {
   const [draftLocation, setDraftLocation] = useState<{longitude: number; latitude: number} | null>(null);
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>('list');
   const [currentLocationIdx, setCurrentLocationIdx] = useState(0);
+  const [selectionVersion, setSelectionVersion] = useState(0);
 
-  const handleNextLocation = () => setCurrentLocationIdx(prev => (prev + 1) % LOCATIONS.length);
-  const handlePrevLocation = () => setCurrentLocationIdx(prev => (prev - 1 + LOCATIONS.length) % LOCATIONS.length);
+  const handleNextLocation = () => {
+    setCurrentLocationIdx(prev => (prev + 1) % LOCATIONS.length);
+    setSelectedRestaurantId(null);
+    setSidebarMode('list');
+  };
+  
+  const handlePrevLocation = () => {
+    setCurrentLocationIdx(prev => (prev - 1 + LOCATIONS.length) % LOCATIONS.length);
+    setSelectedRestaurantId(null);
+    setSidebarMode('list');
+  };
   
   // Admin State
   const [isAdmin, setIsAdmin] = useState(false);
@@ -245,6 +255,9 @@ function App() {
     setSelectedRestaurantId(id);
     setDraftLocation(null);
     setSidebarMode(id ? 'detail' : 'list');
+    if (id) {
+      setSelectionVersion(v => v + 1);
+    }
   }, []);
 
   // ─── Create Restaurant ───
@@ -573,6 +586,7 @@ function App() {
         onDeleteReviewerRating={handleDeleteReviewerRating}
         draftLocation={draftLocation}
         isAdmin={isAdmin}
+        selectionVersion={selectionVersion}
       />
     </div>
   );
