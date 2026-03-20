@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import Map, { NavigationControl, Marker, Source, Layer } from 'react-map-gl/maplibre';
+import Map, { Marker, Source, Layer } from 'react-map-gl/maplibre';
 import type { MapRef, LayerProps } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -134,7 +134,7 @@ export function MapContainer({
         onClick={handleMapClick}
         interactiveLayerIds={['3d-buildings']}
       >
-        <NavigationControl position="bottom-right" />
+        {/* NavigationControl Removed */}
         
         <Source id="openmaptiles" type="vector" url="https://api.maptiler.com/tiles/v3/tiles.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL">
           <Layer {...buildingLayer} />

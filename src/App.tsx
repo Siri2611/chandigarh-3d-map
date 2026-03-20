@@ -449,7 +449,7 @@ function App() {
             <img src="/logo.png" alt="Burger.Theory Logo" style={{ width: '72px', height: '72px', objectFit: 'contain', display: 'block', transform: 'translateY(-6px)' }} />
             <div>
               <h1 style={{ color: 'white', fontSize: '1.75rem', margin: 0, textShadow: '0 2px 10px rgba(0,0,0,0.2)' }}>Burger.Theory</h1>
-              <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', margin: '2px 0 0 0', textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>Chandigarh Burger Map</p>
+              <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem', margin: '2px 0 0 0', textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>The Burger Map</p>
             </div>
           </div>
 
